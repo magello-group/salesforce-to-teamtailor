@@ -348,3 +348,7 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Python Tools for Visual Studio (PTVS)
+__pycache__/
+*.pyc
