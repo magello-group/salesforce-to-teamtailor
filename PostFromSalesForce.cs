@@ -15,7 +15,7 @@ namespace Magello.SalesForceToTeamTailor
         }
 
         [Function("PostFromSalesForce")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req)
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "PUT", "POST", "DELETE")] HttpRequestData req)
         {
             _logger.LogInformation("PostFromSalesForce function processing a request..");
 
