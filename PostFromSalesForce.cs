@@ -5,8 +5,30 @@ using Microsoft.Extensions.Logging;
 
 namespace Magello.SalesForceToTeamTailor
 {
+
     public class PostFromSalesForce
     {
+
+        private class SalesForceData {
+            public string? id { get; set; }
+            public string? name { get; set; }
+            public string? accountName { get; set; }
+            public string? lastAnswerDatePart { get; set; }
+            public string? agreementPeriod { get; set; }
+            public string? workPlace { get; set; }
+            public string? description { get; set; }
+
+            public override string ToString()
+            {
+                return $"id: {id}, name: {name}";
+            }
+        }
+
+        private class SalesForceResponse {
+            public string? id { get; set; }
+            public string? status { get; set; }
+        }
+
         private readonly ILogger _logger;
 
         public PostFromSalesForce(ILoggerFactory loggerFactory)
@@ -38,24 +60,5 @@ namespace Magello.SalesForceToTeamTailor
             return response;
         }
 
-        private class SalesForceData {
-            public string? id { get; set; }
-            public string? name { get; set; }
-            public string? accountName { get; set; }
-            public string? lastAnswerDatePart { get; set; }
-            public string? agreementPeriod { get; set; }
-            public string? workPlace { get; set; }
-            public string? description { get; set; }
-
-            public override string ToString()
-            {
-                return $"id: {id}, name: {name}";
-            }
-        }
-
-        private class SalesForceResponse {
-            public string? id { get; set; }
-            public string? status { get; set; }
-        }
     }
 }
