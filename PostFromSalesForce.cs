@@ -26,14 +26,15 @@ namespace Magello.SalesForceToTeamTailor
             catch (Exception e) {
                 _logger.LogError(e, "Error when deserializing json body");
                 var errorResponse = req.CreateResponse(HttpStatusCode.BadRequest);
-                await errorResponse.WriteAsJsonAsync(new ErrorData() { error = "bad json data provided "});
+                await errorResponse.WriteAsJsonAsync(new SalesForceResponse() { status = "error"});
                 return errorResponse;
             }
 
             _logger.LogInformation($"Recieved data: {jsonData}");
 
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(jsonData);
+            //await response.WriteAsJsonAsync(jsonData);
+            await response.WriteAsJsonAsync(new SalesForceResponse() { id = jsonData?.id });
             return response;
         }
 
@@ -52,8 +53,9 @@ namespace Magello.SalesForceToTeamTailor
             }
         }
 
-        private class ErrorData {
-            public string? error { get; set; }
+        private class SalesForceResponse {
+            public string? id { get; set; }
+            public string? status { get; set; }
         }
     }
 }
