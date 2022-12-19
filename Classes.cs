@@ -16,7 +16,7 @@ namespace Magello {
 
         public override string ToString()
         {
-            return $"id: {Id}, name: {Name}";
+            return JsonSerializer.Serialize<SalesForceJob>(this, Utils.GetJsonSerializer());
         }
     }
 
