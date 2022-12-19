@@ -58,7 +58,7 @@ namespace Magello.SalesForceToTeamTailor
             }
 
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(content);
+            await response.WriteAsJsonAsync(new SalesForceResponse() { Id = sfData.Id });
             return response;
         }
 
