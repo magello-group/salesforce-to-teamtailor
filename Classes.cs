@@ -53,6 +53,8 @@ namespace Magello {
     public class TeamTailorJobAttributes {
         public string? Title { get; set; }
         public string? Body { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string>? Tags { get; set; }
         // The job's status, can be one of the following: open, draft, archived, unlisted or temp
         public string Status { get; set; } = "draft";
         
