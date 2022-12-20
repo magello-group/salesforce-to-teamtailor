@@ -6,7 +6,7 @@ namespace Magello {
     
     public static class TeamTailorAPI {
 
-        private static readonly string ApiToken = Environment.GetEnvironmentVariable("TEAMTAILOR_API_TOKEN");
+        private static readonly string? ApiToken = Environment.GetEnvironmentVariable("TEAMTAILOR_API_TOKEN");
         private static readonly string ApiHost= "api.teamtailor.com";
         private static readonly string ApiVersion = "v1";
 

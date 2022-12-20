@@ -5,10 +5,14 @@ public static class Mappings {
         public static TeamTailorJob SalesForceToTeamTailor(SalesForceJob sfJob) {
             TeamTailorJob ttJob = new ();
 
+            if (sfJob == null)
+                return ttJob;
+
             ttJob.Data.Attributes.Title = sfJob.Name;
             ttJob.Data.Attributes.Body = sfJob.Description;
             ttJob.Data.Relationships.User = new TeamTailorUsers();
-            ttJob.Data.Relationships.User.Data.Id = int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""));
+            if (sfJob.TeamTailorUserId != null)
+                ttJob.Data.Relationships.User.Data.Id = int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""));
 
             // Add tags to be able to later filter jobs added by this integration
             ttJob.Data.Attributes.Tags = new List<string>();

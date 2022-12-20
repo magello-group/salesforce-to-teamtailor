@@ -18,7 +18,7 @@ namespace Magello.TeamTailorTimerFunction
         public async Task Run([TimerTrigger("0 */5 * * * *", RunOnStartup = true)] MyInfo myTimer)
         {
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-            _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus.Next}");
+            _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
 
             var taggedJobs = await TeamTailorAPI.GetTaggedJobs(_logger);
             _logger.LogInformation($"Found {taggedJobs?.Count} jobs");

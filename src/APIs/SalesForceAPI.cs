@@ -13,7 +13,7 @@ namespace  Magello
     public static class SalesForceApi {
 
         private static readonly string ApiHost = "r2m.my.salesforce.com";
-        private static readonly string ApiToken = Environment.GetEnvironmentVariable("SALESFORCE_API_TOKEN");
+        private static readonly string? ApiToken = Environment.GetEnvironmentVariable("SALESFORCE_API_TOKEN");
 
         /*
         * Opportunity field reference:
