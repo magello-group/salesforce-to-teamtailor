@@ -15,6 +15,8 @@ Azure function middleware to handle API-to-API communication between SalesForce 
 
 Button -> Flow -> Invocation -> API-class -> Metadata -> Settings -> Call API
 
+API docs: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/quickstart_oauth.htm
+
 # Middleware
 * JSON -> POJO mapping
 * POJO -> TT/SF field mapping

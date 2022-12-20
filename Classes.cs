@@ -36,10 +36,21 @@ namespace Magello {
         }
     }
 
+    public class TeamTailorJobs {
+        public List<TeamTailorJobData> Data { get; set; } = new();
+        public TeamTailorPaginationLinks? Links { get; set; }
+    }
+
+    public class TeamTailorPaginationLinks {
+        public string? First { get; set; }
+        public string? Next { get; set; }
+        public string? Last { get; set; }
+    }
+
     public class TeamTailorJobData {
         public string Type { get; set; } = "jobs";
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public int? Id { get; set; }
+        public string? Id { get; set; }
         public TeamTailorJobAttributes Attributes { get; set; } = new ();
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public TeamTailorJobLinks? Links { get; set; }
