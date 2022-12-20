@@ -4,20 +4,20 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 
-namespace Magello.SalesForceToTeamTailor
+namespace Magello.SalesForceHttpFunction
 {
 
-    public class PostFromSalesForce
+    public class SalesForceHttpFunction
     {
 
         private readonly ILogger _logger;
 
-        public PostFromSalesForce(ILoggerFactory loggerFactory)
+        public SalesForceHttpFunction(ILoggerFactory loggerFactory)
         {
-            _logger = loggerFactory.CreateLogger<PostFromSalesForce>();
+            _logger = loggerFactory.CreateLogger<SalesForceHttpFunction>();
         }
 
-        [Function("PostFromSalesForce")]
+        [Function("SalesForceHttpFunction")]
         public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "PUT", "POST", "DELETE")] HttpRequestData req)
         {
             _logger.LogInformation("PostFromSalesForce function processing a request..");

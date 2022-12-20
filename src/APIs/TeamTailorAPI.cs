@@ -7,7 +7,7 @@ namespace Magello {
     public static class TeamTailorAPI {
 
         private static readonly string ApiToken = Environment.GetEnvironmentVariable("TEAMTAILOR_API_TOKEN");
-        private static readonly string ApiBaseUrl = "api.teamtailor.com";
+        private static readonly string ApiHost= "api.teamtailor.com";
         private static readonly string ApiVersion = "v1";
 
         public async static Task<HttpResponseMessage> CreateJob(TeamTailorJob job, ILogger _logger) {
@@ -17,7 +17,7 @@ namespace Magello {
         public async static Task<List<TeamTailorJobData>?> GetTaggedJobs(ILogger _logger) {
             var jobs = await Get<TeamTailorJobs>(
                 Utils.CreateUrl(
-                    ApiBaseUrl,
+                    ApiHost,
                     $"{ApiVersion}/jobs",
                     new Dictionary<string, string>() { {"filter[tags]", "salesforce"} }),
                 _logger);
@@ -49,7 +49,7 @@ namespace Magello {
             T jsonData,
             ILogger _logger) 
         {
-            var url = Utils.CreateUrl(ApiBaseUrl, endpoint, query);
+            var url = Utils.CreateUrl(ApiHost, endpoint, query);
             _logger.LogInformation($"Calling POST {url}");
             using HttpClient client = new ();
             InitClient(client);

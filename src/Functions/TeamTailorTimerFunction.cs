@@ -2,19 +2,19 @@ using System;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-namespace Magello.SalesForceToTeamTailor
+namespace Magello.TeamTailorTimerFunction
 {
-    public class TeamTailorJobPoll
+    public class TeamTailorTimerFunction
     {
 
         private readonly ILogger _logger;
 
-        public TeamTailorJobPoll(ILoggerFactory loggerFactory)
+        public TeamTailorTimerFunction(ILoggerFactory loggerFactory)
         {
-            _logger = loggerFactory.CreateLogger<TeamTailorJobPoll>();
+            _logger = loggerFactory.CreateLogger<TeamTailorTimerFunction>();
         }
 
-        [Function("TeamTailorJobPoll")]
+        [Function("TeamTailorTimerFunction")]
         public async Task Run([TimerTrigger("0 */5 * * * *", RunOnStartup = true)] MyInfo myTimer)
         {
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
@@ -32,7 +32,7 @@ namespace Magello.SalesForceToTeamTailor
 
     public class MyInfo
     {
-        public MyScheduleStatus ScheduleStatus { get; set; }
+        public MyScheduleStatus? ScheduleStatus { get; set; }
 
         public bool IsPastDue { get; set; }
     }

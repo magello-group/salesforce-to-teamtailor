@@ -13,9 +13,7 @@ Azure function middleware to handle API-to-API communication between SalesForce 
 * Settings
     * String value that holds the url and token key for the Azure Function running the middleware
 
-Button -> Flow -> Invocation -> API-class -> Metadata -> Settings -> Call API
-
-API docs: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/quickstart_oauth.htm
+Button -> Flow -> Invocation -> API-class -> Metadata + Settings -> Call API
 
 # Middleware
 * JSON -> POJO mapping
