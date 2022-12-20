@@ -25,3 +25,9 @@ API docs: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_re
 * Business logic
 
 # TeamTailor
+
+# TODO
+* Field mappings SF -> TT
+* Status for new jobs in TT
+* When to report back to SF
+* Field mappings TT -> SF on update

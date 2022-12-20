@@ -6,6 +6,7 @@ namespace Magello.SalesForceToTeamTailor
 {
     public class TeamTailorJobPoll
     {
+
         private readonly ILogger _logger;
 
         public TeamTailorJobPoll(ILoggerFactory loggerFactory)
