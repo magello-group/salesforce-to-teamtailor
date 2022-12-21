@@ -18,11 +18,13 @@ Button -> Flow -> Invocation -> API-class -> Metadata + Settings -> Call API
 # Middleware
 * JSON -> POJO mapping
 * POJO -> TT/SF field mapping
+* TeamTailor body rendering
 * TeamTailor API token
 * Salesforce API token
 * Business logic
 
 # TeamTailor
+* Nothing
 
 # TODO
 * Field mappings SF -> TT

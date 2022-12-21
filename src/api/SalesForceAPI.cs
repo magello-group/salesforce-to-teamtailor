@@ -19,6 +19,11 @@ namespace  Magello
         * Opportunity field reference:
         * https://developer.salesforce.com/docs/atlas.en-us.240.0.object_reference.meta/object_reference/sforce_api_objects_opportunity.htm
         */
+
+        /*
+        * Opportunity update documentation:
+        * https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_update_fields.htm
+        */
         public async static Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
             return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, _logger);
         }

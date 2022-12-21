@@ -68,7 +68,16 @@ namespace Magello {
         public List<string>? Tags { get; set; }
         // The job's status, can be one of the following: open, draft, archived, unlisted or temp
         public string Status { get; set; } = "draft";
-        
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? SalesForceOpportunityId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TeamTailorPicture? Picture { get; set; }
+    }
+
+    public class TeamTailorPicture {
+        public string? Original { get; set; }
+        public string? Standard { get; set; }
+        public string? Thumb { get; set; }
     }
 
     public class TeamTailorRelationships {

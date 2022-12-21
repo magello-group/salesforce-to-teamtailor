@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace Magello {
@@ -32,7 +33,24 @@ namespace Magello {
                     break;
                 jobData.AddRange(jobs.Data);
             }
+            LoadOpportunityIdFromTags(jobData);
             return jobData;
+        }
+
+        private static void LoadOpportunityIdFromTags(List<TeamTailorJobData> jobs) {
+            var pattern = $"{Mappings.SfIdTagPrefix}(.+)";
+            // Sanity checks
+            foreach (var job in jobs) {
+                if (job.Attributes == null || 
+                    job.Attributes.Tags == null ||
+                    job.Attributes.Tags.Count == 0)
+                    return;
+                foreach (var t in job.Attributes.Tags) {
+                    var idMatch = Regex.Match(t, pattern);
+                    if (idMatch.Success)
+                        job.Attributes.SalesForceOpportunityId = idMatch.Groups[1].Value;
+                }
+            }
         }
 
         private async static Task<T?> Get<T>(string url, ILogger _logger) {
