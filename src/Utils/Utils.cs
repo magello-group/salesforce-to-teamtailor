@@ -6,7 +6,7 @@ namespace Magello {
 
     public static class Utils {
 
-        public static TeamTailorPicture GetRandomPicture() {
+        public static string GetRandomPictureUrl() {
             var uuidPool = new List<string>() {
                 "0532ef7f-f9a1-4255-b208-f360df980e86",
                 "3080d4db-152f-4393-8ed8-4604e225fa9d",
@@ -16,12 +16,12 @@ namespace Magello {
                 "0de870ea-3ab1-4de1-aad2-e9620234bab4"
             };
             var uuid = uuidPool[new Random().Next(0, uuidPool.Count - 1)];
-            var pic = new TeamTailorPicture() {
+            /*var pic = new TeamTailorPicture() {
                 Original = $"https://teamtailor-production.s3.eu-west-1.amazonaws.com/image_uploads/{uuid}/original.jpg",
                 Standard = $"https://media.cdn.teamtailor.com/images/s3/teamtailor-production/hero_picture_large-v6/image_uploads/{uuid}/original.jpg",
                 Thumb = $"https://media.cdn.teamtailor.com/images/s3/teamtailor-production/user_picture_800-v8/image_uploads/{uuid}/original.jpg"
-            };
-            return pic;
+            };*/
+            return $"https://teamtailor-production.s3.eu-west-1.amazonaws.com/image_uploads/{uuid}/original.jpg";
         }
 
         public static string TemplateTeamTailorBody(SalesForceJob job) {

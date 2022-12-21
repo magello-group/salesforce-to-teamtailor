@@ -11,6 +11,37 @@ namespace Magello {
         private static readonly string ApiHost= "api.teamtailor.com";
         private static readonly string ApiVersion = "v1";
 
+        public async static Task<List<TeamTailorApplicationData>?> GetApplications(
+            DateTime since, 
+            ILogger _logger) 
+        {
+            var applications = await Get<TeamTailorApplications>(
+                Utils.CreateUrl(
+                    ApiHost,
+                    $"{ApiVersion}/job-applications",
+                    new Dictionary<string, string>() { { "filter[created-at][from]", since.ToLongDateString() } }),
+                _logger);
+            List<TeamTailorApplicationData> applicationData = new ();
+            if (applications == null)
+                return applicationData;
+            foreach (var application in applications) {
+                applicationData.AddRange(application.Data);
+            }
+            return applicationData;
+        }
+
+        public async static Task<TeamTailorJob?> GetJob(string link, ILogger _logger) {
+            var jobs = await Get<TeamTailorJob>(
+                Utils.CreateUrl(
+                    ApiHost,
+                    link,
+                    new Dictionary<string, string>()),
+                    _logger);
+            if (jobs == null || jobs.Count() == 0)
+                return null;
+            return jobs.First();
+        }
+
         public async static Task<HttpResponseMessage> CreateJob(TeamTailorJob job, ILogger _logger) {
             return await Post<TeamTailorJob>($"{ApiVersion}/jobs", null, job, _logger);
         }
@@ -22,23 +53,17 @@ namespace Magello {
                     $"{ApiVersion}/jobs",
                     new Dictionary<string, string>() { {"filter[tags]", "salesforce"} }),
                 _logger);
-            if (jobs == null)
-                return null;
             List<TeamTailorJobData> jobData = new List<TeamTailorJobData>();
-            jobData.AddRange(jobs.Data);
-            // Handle pagination links
-            while (!string.IsNullOrEmpty(jobs?.Links?.Next)) {
-                jobs = await Get<TeamTailorJobs>(jobs.Links.Next, _logger);
-                if (jobs == null)
-                    break;
-                jobData.AddRange(jobs.Data);
-            }
-            LoadOpportunityIdFromTags(jobData);
+            if (jobs == null)
+                return jobData;
+            foreach (var job in jobs)
+                jobData.AddRange(job.Data);
+            LoadOpportunityRefNrFromTags(jobData);
             return jobData;
         }
 
-        private static void LoadOpportunityIdFromTags(List<TeamTailorJobData> jobs) {
-            var pattern = $"{Mappings.SfIdTagPrefix}(.+)";
+        private static void LoadOpportunityRefNrFromTags(List<TeamTailorJobData> jobs) {
+            var pattern = $"{Mappings.SfRefTagPrefix}(.+)";
             // Sanity checks
             foreach (var job in jobs) {
                 if (job.Attributes == null || 
@@ -48,17 +73,28 @@ namespace Magello {
                 foreach (var t in job.Attributes.Tags) {
                     var idMatch = Regex.Match(t, pattern);
                     if (idMatch.Success)
-                        job.Attributes.SalesForceOpportunityId = idMatch.Groups[1].Value;
+                        job.Attributes.SalesForceInternalRefId = idMatch.Groups[1].Value;
                 }
             }
         }
 
-        private async static Task<T?> Get<T>(string url, ILogger _logger) {
+        // Handles pagination through IPageable
+        private async static Task<List<T>?> Get<T>(string url, ILogger _logger) where T : IPageable {
             _logger.LogInformation($"Calling GET {url}");
+            var result = new List<T>();
             using HttpClient client = new ();
             InitClient(client);
             var stringResponse = await client.GetStringAsync(url);
-            return JsonSerializer.Deserialize<T>(stringResponse, Utils.GetJsonSerializer());
+            var response = JsonSerializer.Deserialize<T>(stringResponse, Utils.GetJsonSerializer());
+            if (response != null)
+                result.Add(response);
+            if (response?.GetNextUrl() != null) {
+                stringResponse = await client.GetStringAsync(response.GetNextUrl());
+                response = JsonSerializer.Deserialize<T>(stringResponse, Utils.GetJsonSerializer());
+                if (response != null)
+                    result.Add(response);    
+            }
+            return result;
         }
 
         private async static Task<HttpResponseMessage> Post<T>(

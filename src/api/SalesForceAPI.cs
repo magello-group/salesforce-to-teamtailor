@@ -12,9 +12,11 @@ namespace  Magello
     */
     public static class SalesForceApi {
 
-        private static readonly string ApiHost = "r2m.my.salesforce.com";
-        private static readonly string? ApiToken = Environment.GetEnvironmentVariable("SALESFORCE_API_TOKEN");
-
+        private static readonly string? ApiHost = Environment.GetEnvironmentVariable("SALESFORCE_API_HOST");
+        private static readonly string? ApiTokenEndpoint = Environment.GetEnvironmentVariable("SALESFORCE_TOKEN_ENDPOINT");
+        private static readonly string? ApiClientKey = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_KEY");
+        private static readonly string? ApiClientSecret = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_SECRET");
+        private static string? ApiAccessToken;
         /*
         * Opportunity field reference:
         * https://developer.salesforce.com/docs/atlas.en-us.240.0.object_reference.meta/object_reference/sforce_api_objects_opportunity.htm
@@ -24,6 +26,33 @@ namespace  Magello
         * Opportunity update documentation:
         * https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_update_fields.htm
         */
+
+        /* {
+            Token endpoint request:
+
+            POST /services/oauth2/token HTTP/1.1
+            Host: MyDomainName.my.salesforce.com
+            grant_type=client_credentials&
+            client_id=*******************&
+            client_secret=*******************
+
+            Token endpoint response:
+
+            "access_token": "*******************",
+            "instance_url": "https://yourInstance.salesforce.com",
+            "id": "https://login.salesforce.com/id/XXXXXXXXXXXXXXXXXX/XXXXXXXXXXXXXXXXXX",
+            "token_type": "Bearer",
+            "scope": "id api",
+            "issued_at": "1657741493799",
+            "signature": "c2lnbmF0dXJl"
+        } */
+
+        public async static Task SetAccessToken() {
+            if (!string.IsNullOrEmpty(ApiAccessToken))
+                return;
+            
+        }
+
         public async static Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
             return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, _logger);
         }
@@ -57,7 +86,7 @@ namespace  Magello
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                "Token", $"Bearer {ApiToken}"
+                "Token", $"Bearer {ApiAccessToken}"
             );
         }
     }

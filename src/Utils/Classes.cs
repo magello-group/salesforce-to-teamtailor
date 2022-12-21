@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Magello;
 
 namespace Magello {
 
@@ -27,19 +28,71 @@ namespace Magello {
         public string? Status { get; set; }
     }
 
-    // API representation of a job in Team Tailor
-    public class TeamTailorJob {
+    public interface IPageable {
+        public string? GetNextUrl();
+    }
+
+    public class TeamTailorApplications : IPageable {
+        public List<TeamTailorApplicationData> Data { get; set; } = new ();
+        public TeamTailorPaginationLinks? Links { get; set; }
+
+        public string? GetNextUrl()
+        {
+            if (Links != null && ! string.IsNullOrEmpty(Links.Next))
+                return Links.Next;
+            return null;
+        }
+    }
+
+    public class TeamTailorApplicationData {
+        public string Type { get; set; } = "job-applications";
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Id { get; set; }
+        public TeamTailorApplicationAttributes Attributes { get; set; } = new ();
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TeamTailorLinks? Links { get; set; }
+        public TeamTailorApplicationRelationships Relationships { get; set; } = new ();
+    }
+
+    public class TeamTailorApplicationAttributes {
+
+    }
+
+    public class TeamTailorApplicationRelationships {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TeamTailorJobRelation? Job { get; set; }
+    }
+
+    public class TeamTailorJobRelation {
+        public TeamTailorLinks? Links { get; set; }
+    }
+
+    // Wrapper for single job
+    public class TeamTailorJob : IPageable {
         public TeamTailorJobData Data { get; set; } = new ();
 
         public override string ToString()
         {
             return JsonSerializer.Serialize<TeamTailorJob>(this, Utils.GetJsonSerializer());
         }
+
+        // Single jobs are never pageable
+        public string? GetNextUrl()
+        {
+            return null;
+        }
     }
 
-    public class TeamTailorJobs {
+    public class TeamTailorJobs : IPageable {
         public List<TeamTailorJobData> Data { get; set; } = new();
         public TeamTailorPaginationLinks? Links { get; set; }
+
+        public string? GetNextUrl()
+        {
+            if (Links != null && ! string.IsNullOrEmpty(Links.Next))
+                return Links.Next;
+            return null;
+        }
     }
 
     public class TeamTailorPaginationLinks {
@@ -54,12 +107,13 @@ namespace Magello {
         public string? Id { get; set; }
         public TeamTailorJobAttributes Attributes { get; set; } = new ();
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public TeamTailorJobLinks? Links { get; set; }
-        public TeamTailorRelationships Relationships { get; set; } = new ();
+        public TeamTailorLinks? Links { get; set; }
+        public TeamTailorJobRelationships Relationships { get; set; } = new ();
     }
 
-    public class TeamTailorJobLinks {
-
+    public class TeamTailorLinks {
+        public string? Self { get; set; }
+        public string? Related { get; set; }
     }
 
     public class TeamTailorJobAttributes {
@@ -70,9 +124,9 @@ namespace Magello {
         // The job's status, can be one of the following: open, draft, archived, unlisted or temp
         public string Status { get; set; } = "draft";
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? SalesForceOpportunityId { get; set; }
+        public string? SalesForceInternalRefId { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public TeamTailorPicture? Picture { get; set; }
+        public string? Picture { get; set; }
     }
 
     public class TeamTailorPicture {
@@ -81,7 +135,7 @@ namespace Magello {
         public string? Thumb { get; set; }
     }
 
-    public class TeamTailorRelationships {
+    public class TeamTailorJobRelationships {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public TeamTailorLocations? Locations { get; set; }
         public TeamTailorUsers? User { get; set; }
