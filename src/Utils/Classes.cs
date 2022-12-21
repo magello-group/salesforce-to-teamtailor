@@ -13,6 +13,7 @@ namespace Magello {
         public string? AgreementPeriod { get; set; }
         public string? WorkPlace { get; set; }
         public string? Description { get; set; }
+        public string? InternalRefNr { get; set; }
 
         public override string ToString()
         {

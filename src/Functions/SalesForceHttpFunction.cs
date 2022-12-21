@@ -10,6 +10,7 @@ namespace Magello.SalesForceHttpFunction
     public class SalesForceHttpFunction
     {
 
+// Använd internt ref-nr på något sätt
         private readonly ILogger _logger;
 
         public SalesForceHttpFunction(ILoggerFactory loggerFactory)

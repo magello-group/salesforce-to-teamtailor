@@ -8,3 +8,5 @@
 <p>J{{ AgreementPeriod }}</p>
 <h3>Arbetsplats</h3>
 <p>{{ WorkPlace }}</p>
+<h3>Referensnr</h3>
+<p>{{ InternalRefNr }}</p>

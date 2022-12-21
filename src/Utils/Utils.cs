@@ -32,6 +32,7 @@ namespace Magello {
             so.Add("WorkPlace", job.WorkPlace);
             so.Add("AgreementPeriod", job.AgreementPeriod);
             so.Add("Description", job.Description);
+            so.Add("InternalRefNr", job.InternalRefNr);
             so.Add("Now", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
             var context = new TemplateContext();
             context.PushGlobal(so);
