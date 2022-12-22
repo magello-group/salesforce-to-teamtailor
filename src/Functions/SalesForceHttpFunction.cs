@@ -57,8 +57,12 @@ namespace Magello.SalesForceHttpFunction
                 return errorResponse;
             }
 
+            var createdJob = JsonSerializer.Deserialize<TeamTailorJob>(content, Utils.GetJsonSerializer());
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new SalesForceResponse() { Id = sfData.Id });
+            await response.WriteAsJsonAsync(new SalesForceResponse() { 
+                Id = sfData.Id,
+                Link = createdJob?.Data.Links?.CareersiteJobUrl
+            });
             return response;
         }
 

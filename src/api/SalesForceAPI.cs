@@ -7,8 +7,9 @@ namespace  Magello
 {
     
     /*
-    * To get an access token for Salesforce, use this guide:
+    * Salesforce asnd oauth:
     * https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/quickstart_oauth.htm
+    * https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_oauth_and_connected_apps.htm
     */
     public static class SalesForceApi {
 

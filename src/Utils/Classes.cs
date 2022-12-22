@@ -26,6 +26,7 @@ namespace Magello {
     public class SalesForceResponse {
         public string? Id { get; set; }
         public string? Status { get; set; }
+        public string? Link { get; set; }
     }
 
     public class SalesForceOAuthResponse {
@@ -152,6 +153,8 @@ namespace Magello {
     public class TeamTailorLinks {
         public string Self { get; set; } = "";
         public string Related { get; set; } = "";
+        [JsonPropertyName("careersite-job-url")]
+        public string CareersiteJobUrl { get; set; } = "";
     }
 
     public class TeamTailorPostJobAttributes {
