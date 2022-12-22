@@ -78,6 +78,22 @@ namespace Magello {
     }
 
     // Wrapper for single job
+    public class TeamTailorPostJob : IPageable {
+        public TeamTailorPostJobData Data { get; set; } = new ();
+
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize<TeamTailorPostJob>(this, Utils.GetJsonSerializer());
+        }
+
+        // Single jobs are never pageable
+        public string? GetNextUrl()
+        {
+            return null;
+        }
+    }
+
+    // Wrapper for single job
     public class TeamTailorJob : IPageable {
         public TeamTailorJobData Data { get; set; } = new ();
 
@@ -111,6 +127,18 @@ namespace Magello {
         public string? Last { get; set; }
     }
 
+    // Because Teamtailor returns one variant of "picture" and requires another when
+    // posting
+    public class TeamTailorPostJobData {
+        public string Type { get; set; } = "jobs";
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Id { get; set; }
+        public TeamTailorPostJobAttributes Attributes { get; set; } = new ();
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TeamTailorLinks? Links { get; set; }
+        public TeamTailorJobRelationships Relationships { get; set; } = new ();
+    }
+
     public class TeamTailorJobData {
         public string Type { get; set; } = "jobs";
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -126,7 +154,7 @@ namespace Magello {
         public string Related { get; set; } = "";
     }
 
-    public class TeamTailorJobAttributes {
+    public class TeamTailorPostJobAttributes {
         public string? Title { get; set; }
         public string? Body { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -137,6 +165,19 @@ namespace Magello {
         public string? SalesForceInternalRefId { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Picture { get; set; }
+    }
+
+    public class TeamTailorJobAttributes {
+        public string? Title { get; set; }
+        public string? Body { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string>? Tags { get; set; }
+        // The job's status, can be one of the following: open, draft, archived, unlisted or temp
+        public string Status { get; set; } = "draft";
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? SalesForceInternalRefId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TeamTailorPicture? Picture { get; set; }
     }
 
     public class TeamTailorPicture {

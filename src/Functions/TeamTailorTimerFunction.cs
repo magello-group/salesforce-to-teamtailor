@@ -39,11 +39,11 @@ namespace Magello.TeamTailorTimerFunction
             _logger.LogInformation($"Found {applications.Count} applications since last run");
 
             // No applications - we're done
-            if (!applications.Any())
-                return;
+            //if (!applications.Any())
+            //    return;
 
             // Get an Azure Table Storage client
-            var tableClient = await GetTableClient();
+            var tableClient = await GetTableClient(_logger);
 
             // Get a fresh access token for the Salesforce API
             await SalesForceApi.RefreshAccessToken(_logger);
@@ -66,15 +66,12 @@ namespace Magello.TeamTailorTimerFunction
                 // Load the internal ref nr, if the job has that tag
                 TeamTailorAPI.LoadOpportunityRefNrFromTags(new () { job.Data });
                 // Check if job was created by this integration (ie it has an internal ref nr)
-                if (string.IsNullOrEmpty(job.Data.Attributes.SalesForceInternalRefId))
-                    continue;
-
-                var internalRef = job.Data.Attributes.SalesForceInternalRefId;
-                if (internalRef == null) {
-                    _logger.LogInformation("Internal ref was null");
+                if (string.IsNullOrEmpty(job.Data.Attributes.SalesForceInternalRefId)) {
+                    _logger.LogInformation("Couldn't get internal ref nr for job");
                     continue;
                 }
 
+                var internalRef = job.Data.Attributes.SalesForceInternalRefId;
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(
                     e => e.InternalRefNr == internalRef && e.ApplicationId == application.Id
@@ -97,12 +94,14 @@ namespace Magello.TeamTailorTimerFunction
 
         }
 
-        private async Task<TableClient> GetTableClient() {
+        private async Task<TableClient> GetTableClient(ILogger _logger) {
+            _logger.LogInformation($"Getting TableClient for {StorageAccountName}");
             var tableClient = new TableClient(    
                 new Uri(StorageAccountUri),
                 StorageTableName,
                 new TableSharedKeyCredential(StorageAccountName, StorageAccountKey));
             await tableClient.CreateIfNotExistsAsync();
+            _logger.LogInformation("TableClient OK");
             return tableClient;
         }
     }

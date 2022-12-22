@@ -27,7 +27,8 @@ Button -> Flow -> Invocation -> API-class -> Metadata + Settings -> Call API
 * Nothing
 
 # TODO
-* Field mappings SF -> TT
-* Status for new jobs in TT
-* When to report back to SF
-* Field mappings TT -> SF on update
+* Import changeset to production
+* Create connected app with client credential flow
+* Configure Azure Function with client-id/secret for connected app
+* Create user + profile with "Api Only" permission set
+* Add created user as "Run as" for connected app

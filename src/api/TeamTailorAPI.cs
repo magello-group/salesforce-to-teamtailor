@@ -39,8 +39,8 @@ namespace Magello {
             return jobs.First();
         }
 
-        public async static Task<HttpResponseMessage> CreateJob(TeamTailorJob job, ILogger _logger) {
-            return await Post<TeamTailorJob>($"{ApiVersion}/jobs", null, job, _logger);
+        public async static Task<HttpResponseMessage> CreateJob(TeamTailorPostJob job, ILogger _logger) {
+            return await Post<TeamTailorPostJob>($"{ApiVersion}/jobs", null, job, _logger);
         }
 
         public async static Task<List<TeamTailorJobData>?> GetTaggedJobs(ILogger _logger) {

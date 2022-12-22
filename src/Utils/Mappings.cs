@@ -4,8 +4,8 @@ public static class Mappings {
 
         public static readonly string SfRefTagPrefix = "sfref:";
 
-        public static TeamTailorJob SalesForceToTeamTailor(SalesForceJob sfJob) {
-            TeamTailorJob ttJob = new ();
+        public static TeamTailorPostJob SalesForceToTeamTailor(SalesForceJob sfJob) {
+            TeamTailorPostJob ttJob = new ();
 
             if (sfJob == null)
                 return ttJob;
