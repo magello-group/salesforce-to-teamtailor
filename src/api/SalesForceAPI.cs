@@ -12,12 +12,12 @@ namespace  Magello
     */
     public static class SalesForceApi {
 
-        private static readonly string? ApiHost = Environment.GetEnvironmentVariable("SALESFORCE_API_HOST");
-        private static readonly string? ApiTokenEndpoint = Environment.GetEnvironmentVariable("SALESFORCE_TOKEN_ENDPOINT");
-        private static readonly string? ApiClientKey = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_KEY");
-        private static readonly string? ApiClientSecret = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_SECRET");
+        private static readonly string ApiHost = Environment.GetEnvironmentVariable("SALESFORCE_API_HOST") ?? "";
+        private static readonly string ApiTokenEndpoint = Environment.GetEnvironmentVariable("SALESFORCE_TOKEN_ENDPOINT") ?? "";
+        private static readonly string ApiClientKey = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_KEY") ?? "";
+        private static readonly string ApiClientSecret = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_SECRET") ?? "";
         private static string? ApiAccessToken;
-        
+
         /*
         * Opportunity field reference:
         * https://developer.salesforce.com/docs/atlas.en-us.240.0.object_reference.meta/object_reference/sforce_api_objects_opportunity.htm
@@ -54,7 +54,7 @@ namespace  Magello
                 return;
             var tokenResponse = await PostFormData<SalesForceOAuthResponse>(
                 Utils.CreateUrl(
-                    ApiHost, 
+                    ApiHost,
                     ApiTokenEndpoint,
                     query:null),
                 _logger,

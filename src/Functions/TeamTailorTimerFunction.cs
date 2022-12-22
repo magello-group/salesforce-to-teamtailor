@@ -11,9 +11,9 @@ namespace Magello.TeamTailorTimerFunction
     {
 
         private readonly ILogger _logger;
-        private readonly string StorageAccountUri = Environment.GetEnvironmentVariable("TABLE_STORAGE_URI");
-        private readonly string StorageAccountName = Environment.GetEnvironmentVariable("TABLE_STORAGE_NAME");
-        private readonly string StorageAccountKey = Environment.GetEnvironmentVariable("TABLE_STORAGE_KEY");
+        private readonly string StorageAccountUri = Environment.GetEnvironmentVariable("TABLE_STORAGE_URI") ?? "";
+        private readonly string StorageAccountName = Environment.GetEnvironmentVariable("TABLE_STORAGE_NAME") ?? "";
+        private readonly string StorageAccountKey = Environment.GetEnvironmentVariable("TABLE_STORAGE_KEY") ?? "";
         private readonly string StorageTableName = "Applications";
 
         public TeamTailorTimerFunction(ILoggerFactory loggerFactory)
@@ -50,16 +50,31 @@ namespace Magello.TeamTailorTimerFunction
 
             // Loop all new found applications
             foreach (var application in applications) {
+                // Sanity check
+                if (application == null) {
+                    _logger.LogInformation("Application was null");
+                    continue;
+                }
 
                 // Get linked job for application
                 var job = await TeamTailorAPI.GetJob(application.Relationships.Job.Links.Related, _logger);
+                if (job == null) {
+                    _logger.LogInformation("Job was null");
+                    continue;
+                }
+
                 // Load the internal ref nr, if the job has that tag
                 TeamTailorAPI.LoadOpportunityRefNrFromTags(new () { job.Data });
                 // Check if job was created by this integration (ie it has an internal ref nr)
-                if (string.IsNullOrEmpty(job.Data?.Attributes?.SalesForceInternalRefId))
+                if (string.IsNullOrEmpty(job.Data.Attributes.SalesForceInternalRefId))
                     continue;
 
-                var internalRef = job.Data?.Attributes?.SalesForceInternalRefId;
+                var internalRef = job.Data.Attributes.SalesForceInternalRefId;
+                if (internalRef == null) {
+                    _logger.LogInformation("Internal ref was null");
+                    continue;
+                }
+
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(
                     e => e.InternalRefNr == internalRef && e.ApplicationId == application.Id
@@ -93,10 +108,10 @@ namespace Magello.TeamTailorTimerFunction
     }
 
     public class ApplicationTableEntity : ITableEntity {
-        public string InternalRefNr { get; set; }
-        public string ApplicationId { get; set; }
-        public string PartitionKey { get; set; }
-        public string RowKey { get; set; }
+        public string InternalRefNr { get; set; } = "";
+        public string ApplicationId { get; set; } = "";
+        public string PartitionKey { get; set; } = "";
+        public string RowKey { get; set; } = "";
         public DateTimeOffset? Timestamp { get; set; }
         public ETag ETag { get; set; }
     }

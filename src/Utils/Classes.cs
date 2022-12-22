@@ -57,10 +57,10 @@ namespace Magello {
     public class TeamTailorApplicationData {
         public string Type { get; set; } = "job-applications";
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Id { get; set; }
+        public string Id { get; set; } = "";
         public TeamTailorApplicationAttributes Attributes { get; set; } = new ();
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public TeamTailorLinks? Links { get; set; }
+        public TeamTailorLinks Links { get; set; } = new ();
         public TeamTailorApplicationRelationships Relationships { get; set; } = new ();
     }
 
@@ -70,11 +70,11 @@ namespace Magello {
 
     public class TeamTailorApplicationRelationships {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public TeamTailorJobRelation? Job { get; set; }
+        public TeamTailorJobRelation Job { get; set; } = new ();
     }
 
     public class TeamTailorJobRelation {
-        public TeamTailorLinks? Links { get; set; }
+        public TeamTailorLinks Links { get; set; } = new ();
     }
 
     // Wrapper for single job
@@ -122,8 +122,8 @@ namespace Magello {
     }
 
     public class TeamTailorLinks {
-        public string? Self { get; set; }
-        public string? Related { get; set; }
+        public string Self { get; set; } = "";
+        public string Related { get; set; } = "";
     }
 
     public class TeamTailorJobAttributes {
