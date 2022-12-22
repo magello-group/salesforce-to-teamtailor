@@ -17,6 +17,7 @@ namespace  Magello
         private static readonly string? ApiClientKey = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_KEY");
         private static readonly string? ApiClientSecret = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_SECRET");
         private static string? ApiAccessToken;
+        
         /*
         * Opportunity field reference:
         * https://developer.salesforce.com/docs/atlas.en-us.240.0.object_reference.meta/object_reference/sforce_api_objects_opportunity.htm
@@ -48,6 +49,7 @@ namespace  Magello
         } */
 
         public async static Task RefreshAccessToken(ILogger _logger) {
+            _logger.LogInformation($"Access token is {ApiAccessToken}");
             if (!string.IsNullOrEmpty(ApiAccessToken))
                 return;
             var tokenResponse = await PostFormData<SalesForceOAuthResponse>(
@@ -62,6 +64,7 @@ namespace  Magello
                     { "client_secret", ApiClientSecret }
                 }
             );
+            _logger.LogInformation($"Got token response {tokenResponse}");
             if (!string.IsNullOrEmpty(tokenResponse?.access_token))
                 ApiAccessToken = tokenResponse.access_token;
         }

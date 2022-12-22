@@ -19,7 +19,9 @@ namespace Magello {
                 Utils.CreateUrl(
                     ApiHost,
                     $"{ApiVersion}/job-applications",
-                    new Dictionary<string, string>() { { "filter[created-at][from]", since.ToLongDateString() } }),
+                    new Dictionary<string, string>() {
+                        { "filter[created-at][from]", since.ToString("yyyy-MM-dd") }
+                    }),
                 _logger);
             List<TeamTailorApplicationData> applicationData = new ();
             if (applications == null)
@@ -31,12 +33,7 @@ namespace Magello {
         }
 
         public async static Task<TeamTailorJob?> GetJob(string link, ILogger _logger) {
-            var jobs = await Get<TeamTailorJob>(
-                Utils.CreateUrl(
-                    ApiHost,
-                    link,
-                    new Dictionary<string, string>()),
-                    _logger);
+            var jobs = await Get<TeamTailorJob>(link, _logger);
             if (jobs == null || jobs.Count() == 0)
                 return null;
             return jobs.First();
