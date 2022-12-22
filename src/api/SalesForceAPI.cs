@@ -47,14 +47,42 @@ namespace  Magello
             "signature": "c2lnbmF0dXJl"
         } */
 
-        public async static Task SetAccessToken() {
+        public async static Task RefreshAccessToken(ILogger _logger) {
             if (!string.IsNullOrEmpty(ApiAccessToken))
                 return;
-            
+            var tokenResponse = await PostFormData<SalesForceOAuthResponse>(
+                Utils.CreateUrl(
+                    ApiHost, 
+                    ApiTokenEndpoint,
+                    query:null),
+                _logger,
+                formData: new () { 
+                    { "grant_type", "client_credentials" },
+                    { "client_id", ApiClientKey },
+                    { "client_secret", ApiClientSecret }
+                }
+            );
+            if (!string.IsNullOrEmpty(tokenResponse?.access_token))
+                ApiAccessToken = tokenResponse.access_token;
         }
 
         public async static Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
             return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, _logger);
+        }
+
+        private async static Task<T?> PostFormData<T>(
+            string url, 
+            ILogger _logger, 
+            Dictionary<string, string> formData) 
+        {
+            _logger.LogInformation($"Calling Post {url}");
+            var result = new List<T>();
+            using HttpClient client = new ();
+            InitClient(client);
+            var content = new FormUrlEncodedContent(formData);
+            var response = await client.PostAsync(url, content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<T>(responseBody, Utils.GetJsonSerializer());
         }
 
         private async static Task<HttpResponseMessage> Patch<T>(

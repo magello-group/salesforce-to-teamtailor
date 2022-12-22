@@ -23,7 +23,7 @@ namespace Magello.TeamTailorTimerFunction
         [Function("TeamTailorTimerFunction")]
         public async Task Run([TimerTrigger("0 */5 * * * *", RunOnStartup = true)] MyInfo myTimer)
         {
-            _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+            _logger.LogInformation($"TeamTailorTimerFunction executed at: {DateTime.Now}");
             _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
 
             // Get the datetime of our last run
@@ -31,44 +31,29 @@ namespace Magello.TeamTailorTimerFunction
             if (myTimer.ScheduleStatus?.Last != null)
                 lastRun = myTimer.ScheduleStatus.Last;
 
-            // Get all jobs with the "salesforce" tag
-            //var taggedJobs = await TeamTailorAPI.GetTaggedJobs(_logger);
+            _logger.LogInformation($"Last run was at {lastRun.ToLongDateString()}");
+
             // Get applications created since last run
             var applications = await TeamTailorAPI.GetApplications(lastRun, _logger);
-
-            if (applications == null)
-                return;
-
             _logger.LogInformation($"Found {applications.Count} applications since last run");
 
+            if (!applications.Any())
+                return;
+
+            // Get a fresh access token
+            await SalesForceApi.RefreshAccessToken(_logger);
+
+            // Loop all new found applications
             foreach (var application in applications) {
                 var job = await TeamTailorAPI.GetJob(application.Relationships.Job.Links.Related, _logger);
+                // Load (if it exists) the internal ref nr
+                TeamTailorAPI.LoadOpportunityRefNrFromTags(new () { job.Data });
+                if (string.IsNullOrEmpty(job.Data?.Attributes?.SalesForceInternalRefId))
+                    // This is not a job created via the integration
+                    continue;
+                // Add the application to the salesforce opportunity matching the internal refnr
+
             }
-
-            var serviceClient = new TableServiceClient(
-                new Uri(StorageAccountUri),
-                new TableSharedKeyCredential(StorageAccountName, StorageAccountKey));
-
-            // Get or create our applications table
-            var queryTableResults = serviceClient.Query(filter: $"TableName eq '{StorageTableName}'");
-            TableItem table;
-            if (queryTableResults.Count() == 0)
-                table = serviceClient.CreateTableIfNotExists(StorageTableName);
-            else
-                table = queryTableResults.First();
-
-            // Create a client for the applications table
-            var tableClient = new TableClient(
-                new Uri(StorageAccountUri),
-                StorageTableName,
-                new TableSharedKeyCredential(StorageAccountName, StorageAccountKey));
-
-            /*foreach (var job in taggedJobs) {
-                var refId = job.Attributes.SalesForceInternalRefId;
-                var existingApplications = tableClient.Query<TableEntity>(filter: $"PartitionKey eq '{refId}'");
-
-            }*/
-            
 
         }
     }

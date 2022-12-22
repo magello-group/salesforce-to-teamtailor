@@ -11,7 +11,7 @@ namespace Magello {
         private static readonly string ApiHost= "api.teamtailor.com";
         private static readonly string ApiVersion = "v1";
 
-        public async static Task<List<TeamTailorApplicationData>?> GetApplications(
+        public async static Task<List<TeamTailorApplicationData>> GetApplications(
             DateTime since, 
             ILogger _logger) 
         {
@@ -37,7 +37,7 @@ namespace Magello {
                     link,
                     new Dictionary<string, string>()),
                     _logger);
-            if (jobs == null || jobs.Count() == 0)
+            if (jobs == null || jobs.Count() == 0)
                 return null;
             return jobs.First();
         }
@@ -62,7 +62,7 @@ namespace Magello {
             return jobData;
         }
 
-        private static void LoadOpportunityRefNrFromTags(List<TeamTailorJobData> jobs) {
+        public static void LoadOpportunityRefNrFromTags(List<TeamTailorJobData> jobs) {
             var pattern = $"{Mappings.SfRefTagPrefix}(.+)";
             // Sanity checks
             foreach (var job in jobs) {
