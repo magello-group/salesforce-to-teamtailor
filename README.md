@@ -24,7 +24,9 @@ Button -> Flow -> Invocation -> API-class -> Metadata + Settings -> Call API
 * Business logic
 
 # TeamTailor
-* Nothing
+* Anpassade fält för jobb:
+    * salesforceid (API only)
+    * salesforcerefid (API only)
 
 # TODO
 * Import changeset to production
@@ -32,3 +34,5 @@ Button -> Flow -> Invocation -> API-class -> Metadata + Settings -> Call API
 * Configure Azure Function with client-id/secret for connected app
 * Create user + profile with "Api Only" permission set
 * Add created user as "Run as" for connected app
+* Document ENVs
+* Improve documentation for upkeep

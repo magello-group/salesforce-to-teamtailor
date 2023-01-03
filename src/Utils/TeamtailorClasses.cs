@@ -1,55 +1,74 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Magello;
 
 namespace Magello {
 
-    // API representation of a job in SalesForce
-    public class SalesForceJob {
-        public string? Id { get; set; }
-        public string? TeamTailorUserId { get; set; }
-        public string? Name { get; set; }
-        public string? AccountName { get; set; }
-        public string? LastAnswerDatePart { get; set; }
-        public string? AgreementPeriod { get; set; }
-        public string? WorkPlace { get; set; }
-        public string? Description { get; set; }
-        public string? InternalRefNr { get; set; }
+    /*
+    * CUSTOM FIELD VALUES
+    */
 
-        public override string ToString()
+    /*public class TeamTailorCustomFieldValues : IPageable {
+        public List<TeamTailorCustomFieldValue> Data { get; set; } = new ();
+        public TeamTailorPaginationLinks? Links { get; set; }
+
+        public string? GetNextUrl()
         {
-            return JsonSerializer.Serialize<SalesForceJob>(this, Utils.GetJsonSerializer());
+            if (Links != null && !string.IsNullOrEmpty(Links.Next))
+                return Links.Next;
+            return null;
         }
     }
 
-    // Expected response for SalesForce
-    public class SalesForceResponse {
-        public string? Id { get; set; }
-        public string? Status { get; set; }
-        public string? Link { get; set; }
+    public class TeamTailorCustomFieldValue {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Id { get; set; } = "";
+        public TeamTailorCustomFieldValueAttributes Attributes { get; set; } = new ();
     }
 
-    public class SalesForceOAuthResponse {
-        public string? access_token { get; set; }
-        public string? instance_url { get; set; }
-        public string? id { get; set; } 
-        public string? token_type { get; set; }
-        public string? scope { get; set; }
-        public string? issued_at { get; set; }
-        public string? signature { get; set; }
+    public class TeamTailorCustomFieldValueAttributes {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Value { get; set; } = "";
+    }*/
+
+    /* 
+    * CUSTOM FIELDS
+    */
+
+    /*public class TeamTailorCustomFields : IPageable {
+        public List<TeamTailorCustomField> Data { get; set; } = new ();
+        public TeamTailorPaginationLinks? Links { get; set; }
+
+        public string? GetNextUrl()
+        {
+            if (Links != null && !string.IsNullOrEmpty(Links.Next))
+                return Links.Next;
+            return null;
+        }
     }
 
-    public interface IPageable {
-        public string? GetNextUrl();
+    public class TeamTailorCustomField {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Id { get; set; } = "";
+        public TeamTailorCustomFieldAttributes Attributes { get; set; } = new ();
     }
 
-    public class TeamTailorApplications : IPageable {
+    public class TeamTailorCustomFieldAttributes {
+        [JsonPropertyName("api-name")]
+        public string ApiName { get; set; } = "";
+    }*/
+
+    /*
+    * APPLICATIONS
+    */
+
+    /*public class TeamTailorApplications : IPageable {
         public List<TeamTailorApplicationData> Data { get; set; } = new ();
         public TeamTailorPaginationLinks? Links { get; set; }
 
         public string? GetNextUrl()
         {
-            if (Links != null && ! string.IsNullOrEmpty(Links.Next))
+            if (Links != null && !string.IsNullOrEmpty(Links.Next))
                 return Links.Next;
             return null;
         }
@@ -65,21 +84,26 @@ namespace Magello {
         public TeamTailorApplicationRelationships Relationships { get; set; } = new ();
     }
 
-    public class TeamTailorApplicationAttributes {
-
-    }
+    public class TeamTailorApplicationAttributes { }
 
     public class TeamTailorApplicationRelationships {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public TeamTailorJobRelation Job { get; set; } = new ();
+        public TeamTailorRelation Job { get; set; } = new ();
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        // Reuse job relation, since it's the same
+        public TeamTailorRelation Candidate { get; set; } = new ();
     }
 
-    public class TeamTailorJobRelation {
+    public class TeamTailorRelation {
         public TeamTailorLinks Links { get; set; } = new ();
-    }
+    }*/
+
+    /*
+    * JOB (POST)
+    */
 
     // Wrapper for single job
-    public class TeamTailorPostJob : IPageable {
+    /*public class TeamTailorPostJob : IPageable {
         public TeamTailorPostJobData Data { get; set; } = new ();
 
         public override string ToString()
@@ -92,10 +116,14 @@ namespace Magello {
         {
             return null;
         }
-    }
+    }*/
+
+    /*
+    * JOB (GET)
+    */
 
     // Wrapper for single job
-    public class TeamTailorJob : IPageable {
+    /*public class TeamTailorJob : IPageable {
         public TeamTailorJobData Data { get; set; } = new ();
 
         public override string ToString()
@@ -137,7 +165,7 @@ namespace Magello {
         public TeamTailorPostJobAttributes Attributes { get; set; } = new ();
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public TeamTailorLinks? Links { get; set; }
-        public TeamTailorJobRelationships Relationships { get; set; } = new ();
+        public TeamTailorJobPostRelationships Relationships { get; set; } = new ();
     }
 
     public class TeamTailorJobData {
@@ -148,6 +176,16 @@ namespace Magello {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public TeamTailorLinks? Links { get; set; }
         public TeamTailorJobRelationships Relationships { get; set; } = new ();
+    }
+
+    public class TeamTailorJobRelationships {
+        [JsonPropertyName("custom-field-values")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TeamTailorJobRelationship CustomFieldValueRelationship { get; set; }
+    }
+
+    public class TeamTailorJobRelationship {
+        public TeamTailorLinks Links { get; set; }
     }
 
     public class TeamTailorLinks {
@@ -165,7 +203,11 @@ namespace Magello {
         // The job's status, can be one of the following: open, draft, archived, unlisted or temp
         public string Status { get; set; } = "draft";
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("salesforceinternalref")]
         public string? SalesForceInternalRefId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("salesforceid")]
+        public string? SalesForceId { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Picture { get; set; }
     }
@@ -179,6 +221,9 @@ namespace Magello {
         public string Status { get; set; } = "draft";
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? SalesForceInternalRefId { get; set; }
+        // Opportunity id gets populated from the tags
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
+        public string? SalesForceOpportunityId { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public TeamTailorPicture? Picture { get; set; }
     }
@@ -189,28 +234,40 @@ namespace Magello {
         public string? Thumb { get; set; }
     }
 
-    public class TeamTailorJobRelationships {
+    public class TeamTailorJobPostRelationships {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public TeamTailorLocations? Locations { get; set; }
-        public TeamTailorUsers? User { get; set; }
+        public TeamTailorPostLocations? Locations { get; set; }
+        public TeamTailorPostUsers? User { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("custom-field-values")]
+        public TeamTailorPostCustomFieldValues? CustomFieldValues { get; set; }
     }
 
-    public class TeamTailorUsers {
-        public TeamTailorUser Data { get; set; } = new ();
+    public class TeamTailorPostCustomFieldValues {
+        public TeamTailorPostCustomFieldValue Data { get; set; } = new ();
     }
 
-    public class TeamTailorLocations {
-        public List<TeamTailorLocation> Data { get; set; } = new ();
+    public class TeamTailorPostUsers {
+        public TeamTailorPostUser Data { get; set; } = new ();
     }
 
-    public class TeamTailorLocation {
+    public class TeamTailorPostLocations {
+        public List<TeamTailorPostLocation> Data { get; set; } = new ();
+    }
+
+    public class TeamTailorPostCustomFieldValue {
+        public int? Id { get; set; }
+        public string Type { get; set; } = "custom-field-values";
+    }
+
+    public class TeamTailorPostLocation {
         public int? Id { get; set; }
         public string Type { get; set; } = "locations";
     }
 
-    public class TeamTailorUser {
+    public class TeamTailorPostUser {
         public int? Id { get; set; }
         public string Type { get; set; } = "users";
-    }
+    }*/
 
 }

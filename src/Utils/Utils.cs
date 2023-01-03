@@ -1,10 +1,32 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Scriban;
 using Scriban.Runtime;
 
 namespace Magello {
 
     public static class Utils {
+
+        public static string JsonNodeToString(JsonNode node) {
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            return node.ToJsonString(options);
+        }
+
+        public static string? JsonNodeValue(JsonNode rootNode, string[] path, int index = 0) {
+            if (rootNode is JsonValue)
+                return rootNode.GetValue<string>();
+            if (rootNode is JsonObject obj && obj.ContainsKey(path[index]))
+                return JsonNodeValue(obj[index], path, index++);
+            return null;
+        }
+
+        public static string? GetNextLink(JsonNode? node) {
+            if (node == null)
+                return null;
+            if (node["links"]?["next"]?.GetValue<string>() == null)
+                return null;
+            return node["links"]["next"].GetValue<string>();
+        }
 
         public static string GetRandomPictureUrl() {
             var uuidPool = new List<string>() {

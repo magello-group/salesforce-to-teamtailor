@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ namespace Magello.SalesForceHttpFunction
         }
 
         [Function("SalesForceHttpFunction")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "PUT", "POST", "DELETE")] HttpRequestData req)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "POST")] HttpRequestData req)
         {
             _logger.LogInformation("PostFromSalesForce function processing a request..");
 
@@ -51,17 +52,31 @@ namespace Magello.SalesForceHttpFunction
             var content = await apiResponse.Content.ReadAsStringAsync();
 
             if (!apiResponse.IsSuccessStatusCode) {
-                _logger.LogError($"Bad response from Team Tailor API: {content}");
+                _logger.LogError($"Bad response from TT API for CreateJob: {content}");
                 var errorResponse = req.CreateResponse(HttpStatusCode.BadRequest);
                 await errorResponse.WriteAsJsonAsync(new SalesForceResponse() { Status = "error"});
                 return errorResponse;
             }
 
-            var createdJob = JsonSerializer.Deserialize<TeamTailorJob>(content, Utils.GetJsonSerializer());
+            var createdJob = JsonSerializer.Deserialize<JsonNode>(content, Utils.GetJsonSerializer());
+            
+            // Add custom field values to the job
+            var customFieldValues = Mappings.CreateCustomFieldValues(sfData, createdJob);
+            apiResponse = await TeamTailorAPI.CreateCustomFieldMappings(customFieldValues, _logger);
+            content = await apiResponse.Content.ReadAsStringAsync();
+            if (!apiResponse.IsSuccessStatusCode) {
+                _logger.LogError($"Bad response from TT API for CreateCustomFieldMappings: {content}");
+                var errorResponse = req.CreateResponse(HttpStatusCode.BadRequest);
+                await errorResponse.WriteAsJsonAsync(new SalesForceResponse() { Status = "error"});
+                return errorResponse;
+            }
+
             var response = req.CreateResponse(HttpStatusCode.OK);
+            var jobUrl = createdJob?["data"]?["links"]?["careersite-job-url"]?.GetValue<string>();
+            _logger.LogInformation($"Returning career site link {jobUrl}");
             await response.WriteAsJsonAsync(new SalesForceResponse() { 
                 Id = sfData.Id,
-                Link = createdJob?.Data.Links?.CareersiteJobUrl
+                Link = jobUrl
             });
             return response;
         }

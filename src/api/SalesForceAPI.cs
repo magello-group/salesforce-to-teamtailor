@@ -18,6 +18,7 @@ namespace  Magello
         private static readonly string ApiClientKey = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_KEY") ?? "";
         private static readonly string ApiClientSecret = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_SECRET") ?? "";
         private static string? ApiAccessToken;
+        private static string ApiPath = "/services/data/v56.0/sobjects";
 
         /*
         * Opportunity field reference:
@@ -69,6 +70,20 @@ namespace  Magello
                 ApiAccessToken = tokenResponse.access_token;
         }
 
+        public async static Task<HttpResponseMessage> CreateCase(
+            string opportunityId,
+            string teamTailorCandidateLink
+            , ILogger _logger) 
+        {
+            var sfCase = new SalesforceCase() {
+                OpportunityId = opportunityId,
+                Description = "Denna ansökan är skapad via Magellos TeamTailor-integration",
+                TeamTailorLink = teamTailorCandidateLink
+            };
+            _logger.LogInformation($"Creating new case in Salesforce: {sfCase}");
+            return await Post<SalesforceCase>($"{ApiPath}/Case", null, sfCase, _logger);
+        }
+
         public async static Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
             return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, _logger);
         }
@@ -100,6 +115,20 @@ namespace  Magello
             InitClient(client);
             var request = CreateJsonDataRequest<T>(jsonData);
             return await client.PatchAsync(url, request.Content);
+        }
+
+        private async static Task<HttpResponseMessage> Post<T>(
+            string endpoint,
+            Dictionary<string, string>? query,
+            T jsonData,
+            ILogger _logger) 
+        {
+            var url = Utils.CreateUrl(ApiHost, endpoint, query);
+            _logger.LogInformation($"Calling POST {url}");
+            using HttpClient client = new ();
+            InitClient(client);
+            var request = CreateJsonDataRequest<T>(jsonData);
+            return await client.PostAsync(url, request.Content);
         }
 
         private static HttpRequestMessage CreateJsonDataRequest<T>(T? jsonData) {
