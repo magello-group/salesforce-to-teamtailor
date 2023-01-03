@@ -15,6 +15,8 @@ namespace Magello.TeamTailorTimerFunction
         private readonly string StorageAccountUri = Environment.GetEnvironmentVariable("TABLE_STORAGE_URI") ?? "";
         private readonly string StorageAccountName = Environment.GetEnvironmentVariable("TABLE_STORAGE_NAME") ?? "";
         private readonly string StorageAccountKey = Environment.GetEnvironmentVariable("TABLE_STORAGE_KEY") ?? "";
+        private static readonly string SFIdCustomFieldId = Environment.GetEnvironmentVariable("SFID_CUSTOM_FIELD_ID") ?? "";
+        private static readonly string SFRefCustomFieldId = Environment.GetEnvironmentVariable("SFREF_CUSTOM_FIELD_ID") ?? "";
         private readonly string StorageTableName = "Applications";
 
         public TeamTailorTimerFunction(ILoggerFactory loggerFactory)
@@ -23,10 +25,13 @@ namespace Magello.TeamTailorTimerFunction
         }
 
         [Function("TeamTailorTimerFunction")]
-        public async Task Run([TimerTrigger("0 */5 * * * *", RunOnStartup = false)] MyInfo myTimer)
+        public async Task Run([TimerTrigger("0 */5 * * * *", RunOnStartup = true)] MyInfo myTimer)
         {
             _logger.LogInformation($"TeamTailorTimerFunction executed at: {DateTime.Now}");
             _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
+            
+            // Don't run right now
+            //return;
 
             // Get the datetime of our last run
             var lastRun = DateTime.Now;
@@ -75,28 +80,19 @@ namespace Magello.TeamTailorTimerFunction
 
                 // Get custom field values
                 var fieldValues = await TeamTailorAPI.GetCustomFieldValues(job, _logger);
-                if (fieldValues == null) {
+                if (fieldValues == null || fieldValues.Count == 0) {
                     _logger.LogInformation("Job has no custom field values");
                     continue;
                 }
 
-                /*
-                // Load id and internal ref from teamtailor tags
-                var refId = job["data"]?["attributes"]?["title"]?.GetValue<string>();
-                // Check if job was created by this integration (ie it has an internal ref nr)
-                if (string.IsNullOrEmpty(job.Data.Attributes.SalesForceInternalRefId)) {
-                    _logger.LogInformation("Couldn't get internal ref nr for job");
-                    continue;
+                if (!fieldValues.ContainsKey(SFIdCustomFieldId)) {
+                    _logger.LogInformation("Job has no custom field value for salesforce id");
+                    continue;             
                 }
-                if (string.IsNullOrEmpty(job.Data.Attributes.SalesForceOpportunityId)) {
-                    _logger.LogInformation("Couldn't get opportunity id for job");
-                    continue;
-                }*/
 
-                //var internalRef = job.Data.Attributes.SalesForceInternalRefId;
+                var opportunityId = fieldValues[SFIdCustomFieldId];
                 var internalRef = "con-0002731";
-                //var opportunityId = job.Data.Attributes.SalesForceOpportunityId;
-                var opportunityId = "abc";
+                
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(e => 
                     e.InternalRefNr == internalRef && 

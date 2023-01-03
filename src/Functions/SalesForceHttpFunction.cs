@@ -62,6 +62,7 @@ namespace Magello.SalesForceHttpFunction
             
             // Add custom field values to the job
             var customFieldValues = Mappings.CreateCustomFieldValues(sfData, createdJob);
+            _logger.LogInformation($"Custom value json: {Utils.JsonNodeToString(customFieldValues)}");
             apiResponse = await TeamTailorAPI.CreateCustomFieldMappings(customFieldValues, _logger);
             content = await apiResponse.Content.ReadAsStringAsync();
             if (!apiResponse.IsSuccessStatusCode) {

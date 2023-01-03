@@ -21,6 +21,13 @@ public static class Mappings {
             ttJob["data"]["attributes"]["title"] = sfJob.Name;
             ttJob["data"]["attributes"]["body"] = Utils.TemplateTeamTailorBody(sfJob);
             ttJob["data"]["attributes"]["picture"] = Utils.GetRandomPictureUrl();
+            ttJob["data"]["attributes"]["status"] = "draft";
+            
+            // Add tags
+            ttJob["data"]["attributes"]["tags"] = new JsonArray(
+                "salesforce",
+                $"{sfJob.InternalRefNr}"
+            );
             
             ttJob["data"]["relationships"] = new JsonObject();
             ttJob["data"]["relationships"]["user"] = new JsonObject();
@@ -28,12 +35,6 @@ public static class Mappings {
             ttJob["data"]["relationships"]["user"]["data"]["type"] = "users";
             ttJob["data"]["relationships"]["user"]["data"]["id"] = 
                 int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""));
-
-            // Add tags
-            ttJob["data"]["attributes"]["tags"] = new JsonArray(
-                "salesforce",
-                $"{SfRefTagPrefix}:{sfJob.InternalRefNr}"
-            );
 
             return ttJob;
         }

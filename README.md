@@ -34,5 +34,10 @@ Button -> Flow -> Invocation -> API-class -> Metadata + Settings -> Call API
 * Configure Azure Function with client-id/secret for connected app
 * Create user + profile with "Api Only" permission set
 * Add created user as "Run as" for connected app
+* Document need to create custom fields in TT
+* Document need to add TT userids to SF
+* Document need to add API-only user
 * Document ENVs
+    * Getting id for custom fields: https://api.teamtailor.com/v1/custom-fields
+* Document shortcoming with unable to link directly to application/candidate - only to job
 * Improve documentation for upkeep

@@ -14,18 +14,19 @@ namespace Magello {
 
         public async static Task<HttpResponseMessage> CreateCustomFieldMappings(JsonNode values, ILogger _logger) {
             return await Post<JsonNode>(
-                Utils.CreateUrl(
-                    ApiHost,
-                    $"{ApiVersion}/custom-field-values",
-                    null
-                ),
+                $"{ApiVersion}/custom-field-values",
                 null,
                 values,
                 _logger
             );
         }
 
-        public async static Task<JsonNode?> GetCustomFieldValues(JsonNode job, ILogger _logger) {
+        // Returns a dictionary<string, string> with custom-field id to custom-field-value value
+        // mappings for a given job
+        public async static Task<Dictionary<string, string>?> GetCustomFieldValues(
+            JsonNode job, 
+            ILogger _logger)
+        {
             var link = 
                 job["data"]?["relationships"]?["custom-field-values"]?["links"]?["related"]?
                 .GetValue<string>();
@@ -36,7 +37,28 @@ namespace Magello {
                 link,
                 _logger
             );
-            return values == null ? null : values[0];
+
+            if (values == null || values.Count == 0) {
+                return null;
+            }
+
+            Dictionary<string, string> fieldValues = new Dictionary<string, string>();
+            foreach (var result in values) {
+                foreach (var value in result?["data"]?.AsArray()) {
+                    var fieldLink = value?["relationships"]?["custom-field"]?["links"]?["related"]?.GetValue<string>();
+                    if (fieldLink == null)
+                        continue;
+                    var field = await Get(fieldLink, _logger);
+                    if (field == null && field.Count == 0)
+                        continue;
+                    var fieldId = field[0]["data"]?["id"]?.GetValue<string>();
+                    var fieldValue = value?["attributes"]?["value"]?.GetValue<string>();
+                    if (fieldId != null && fieldValue != null)
+                        fieldValues.Add(fieldId, fieldValue);
+                }
+            }
+
+            return fieldValues;
         }
 
         public async static Task<JsonNode?> GetCustomFields(ILogger _logger) {
