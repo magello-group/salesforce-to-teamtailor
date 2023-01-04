@@ -17,6 +17,7 @@ namespace Magello.TeamTailorTimerFunction
         private readonly string StorageAccountKey = Environment.GetEnvironmentVariable("TABLE_STORAGE_KEY") ?? "";
         private static readonly string SFIdCustomFieldId = Environment.GetEnvironmentVariable("SFID_CUSTOM_FIELD_ID") ?? "";
         private static readonly string SFRefCustomFieldId = Environment.GetEnvironmentVariable("SFREF_CUSTOM_FIELD_ID") ?? "";
+        private static readonly string TeamTailorBaseUrl = Environment.GetEnvironmentVariable("TEAMTAILOR_BASE_URL") ?? "";
         private readonly string StorageTableName = "Applications";
 
         public TeamTailorTimerFunction(ILoggerFactory loggerFactory)
@@ -42,7 +43,7 @@ namespace Magello.TeamTailorTimerFunction
 
             // Get applications created since date of last run
             //var applications = await TeamTailorAPI.GetApplications(lastRun, _logger);
-            var testingDate = new DateTime(2022, 12, 18);
+            var testingDate = new DateTime(2023, 1, 4);
             var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
             _logger.LogInformation($"Found {applications.Count} applications since last run");
 
@@ -90,9 +91,17 @@ namespace Magello.TeamTailorTimerFunction
                     continue;             
                 }
 
+                var candidate = await TeamTailorAPI.GetCandidateFromApplication(
+                    application, 
+                    _logger);
+                if (candidate == null) {
+                    _logger.LogInformation("Could not get candidate from application");
+                    continue;
+                }
+
                 var opportunityId = fieldValues[SFIdCustomFieldId];
                 var internalRef = "con-0002731";
-                
+
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(e => 
                     e.InternalRefNr == internalRef && 
@@ -116,8 +125,9 @@ namespace Magello.TeamTailorTimerFunction
                 tableClient.AddEntity<ApplicationTableEntity>(newTableEntity);
 
                 // Create Salesforce case for application
-                var teamTailorCandidateLink = 
-                    application["relationships"]?["candidate"]?["links"]?["related"]?.GetValue<string>();
+                var jobId = job["data"]["id"];
+                var candidateId = candidate["data"]["id"];
+                var teamTailorCandidateLink = $"{TeamTailorBaseUrl}/jobs/{jobId}/stages/candidate/{candidateId}";
                 await SalesForceApi.CreateCase(opportunityId, teamTailorCandidateLink, _logger);
             }
 

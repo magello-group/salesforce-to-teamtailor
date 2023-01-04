@@ -98,6 +98,19 @@ namespace Magello {
             return applicationData;
         }
 
+        public async static Task<JsonNode?> GetCandidateFromApplication(
+            JsonNode application,
+            ILogger _logger
+        ) {
+            var link = application["relationships"]?["candidate"]?["links"]?["related"]?.GetValue<string>();
+            if (link == null)
+                return null;
+            var candidates = await Get(link, _logger);
+            if (candidates == null || candidates.Count() == 0)
+                return null;
+            return candidates.First();
+        }
+
         public async static Task<JsonNode?> GetJobFromApplication(JsonNode application, ILogger _logger) {
             var link = application["relationships"]?["job"]?["links"]?["related"]?.GetValue<string>();
             if (link == null)
