@@ -47,16 +47,16 @@ namespace Magello.TeamTailorTimerFunction
             var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
             _logger.LogInformation($"Found {applications.Count} applications since last run");
 
+            // No applications - we're done
+            if (!applications.Any())
+                return;
+
             // Get team tailor custom fields
             var customFields = await TeamTailorAPI.GetCustomFields(_logger);
             if (customFields == null) {
                 _logger.LogError("Custom fields was null");
                 return;
             }
-
-            // No applications - we're done
-            //if (!applications.Any())
-            //    return;
 
             // Get an Azure Table Storage client
             var tableClient = await GetTableClient(_logger);
@@ -91,20 +91,10 @@ namespace Magello.TeamTailorTimerFunction
                     continue;             
                 }
 
-                var candidate = await TeamTailorAPI.GetCandidateFromApplication(
-                    application, 
-                    _logger);
-                if (candidate == null) {
-                    _logger.LogInformation("Could not get candidate from application");
-                    continue;
-                }
-
                 var opportunityId = fieldValues[SFIdCustomFieldId];
-                var internalRef = "con-0002731";
 
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(e => 
-                    e.InternalRefNr == internalRef && 
                     e.ApplicationId == application["id"].GetValue<string>()
                 ).FirstOrDefault();
 
@@ -115,9 +105,16 @@ namespace Magello.TeamTailorTimerFunction
                     continue;
                 }
 
+                var candidate = await TeamTailorAPI.GetCandidateFromApplication(
+                    application, 
+                    _logger);
+                if (candidate == null) {
+                    _logger.LogInformation("Could not get candidate from application");
+                    continue;
+                }
+
                 // Add the application to table storage
                 var newTableEntity = new ApplicationTableEntity() {
-                    InternalRefNr = internalRef,
                     ApplicationId = application["id"].GetValue<string>(),
                     RowKey = application["id"].GetValue<string>()
                 };
@@ -146,7 +143,6 @@ namespace Magello.TeamTailorTimerFunction
     }
 
     public class ApplicationTableEntity : ITableEntity {
-        public string InternalRefNr { get; set; } = "";
         public string ApplicationId { get; set; } = "";
         public string PartitionKey { get; set; } = "";
         public string RowKey { get; set; } = "";

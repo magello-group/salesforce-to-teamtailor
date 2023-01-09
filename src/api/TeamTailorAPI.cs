@@ -125,36 +125,7 @@ namespace Magello {
             return await Post<JsonNode>($"{ApiVersion}/jobs", null, job, _logger);
         }
 
-        // Returns the custom field value id for the created value
-        /*public async static Task<string> CreateCustomFieldValue(
-            string customFieldId,
-            string value,
-            ILogger _logger
-        ) {
-            var response = await Post<
-        }*/
-
-        /*public static void LoadDataFromTags(List<JsonNode> jobs) {
-            var refPattern = $"{Mappings.SfRefTagPrefix}(.+)";
-            var idPattern = $"{Mappings.SfIdTagPrefix}(.+)";
-            // Sanity checks
-            foreach (var job in jobs) {
-                if (job.Attributes == null || 
-                    job.Attributes.Tags == null ||
-                    job.Attributes.Tags.Count == 0)
-                    return;
-                foreach (var t in job.Attributes.Tags) {
-                    var refMatch = Regex.Match(t, refPattern);
-                    var idMatch = Regex.Match(t, idPattern);
-                    if (refMatch.Success)
-                        job.Attributes.SalesForceInternalRefId = refMatch.Groups[1].Value;
-                    if (idMatch.Success)
-                        job.Attributes.SalesForceOpportunityId = idMatch.Groups[1].Value;
-                }
-            }
-        }*/
-
-        // Handles pagination through IPageable
+        // Handles pagination
         private async static Task<List<JsonNode>?> Get(string url, ILogger _logger) {
             _logger.LogInformation($"Calling GET {url}");
             var result = new List<JsonNode>();
