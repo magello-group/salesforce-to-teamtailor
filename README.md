@@ -84,7 +84,6 @@ azure function (teamtailor -> salesforce)
 | TABLE_STORAGE_KEY | Key for above storage |
 | TABLE_STORAGE_NAME | Name for above storage |
 | SFID_CUSTOM_FIELD_ID | ID of the custom field used for the salesforceid. This can be obtained through an API call to: https://api.teamtailor.com/v1/custom-fields | 
-| SFREF_CUSTOM_FIELD_ID | Same as above, but for the internal salesforce reference number |
 | TEAMTAILOR_BASE_URL | Base url to the company on teamtailor, e.g. https://app.teamtailor.com/companies/ABCD-ABCab12 |
 
 # TODO

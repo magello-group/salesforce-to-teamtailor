@@ -13,10 +13,6 @@ namespace  Magello
     */
     public static class SalesForceApi {
 
-        private static readonly string ApiHost = Environment.GetEnvironmentVariable("SALESFORCE_API_HOST") ?? "";
-        private static readonly string ApiTokenEndpoint = Environment.GetEnvironmentVariable("SALESFORCE_TOKEN_ENDPOINT") ?? "";
-        private static readonly string ApiClientKey = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_KEY") ?? "";
-        private static readonly string ApiClientSecret = Environment.GetEnvironmentVariable("SALESFORCE_CLIENT_SECRET") ?? "";
         private static string? ApiAccessToken;
         private static string ApiPath = "/services/data/v56.0/sobjects";
 
@@ -55,14 +51,14 @@ namespace  Magello
                 return;
             var tokenResponse = await PostFormData<SalesForceOAuthResponse>(
                 Utils.CreateUrl(
-                    ApiHost,
-                    ApiTokenEndpoint,
+                    Envs.GetEnvVar(Envs.E_SalesForceApiHost),
+                    Envs.GetEnvVar(Envs.E_SalesForceApiTokenEndpoint),
                     query:null),
                 _logger,
                 formData: new () { 
                     { "grant_type", "client_credentials" },
-                    { "client_id", ApiClientKey },
-                    { "client_secret", ApiClientSecret }
+                    { "client_id", Envs.GetEnvVar(Envs.E_SalesForceApiClientKey) },
+                    { "client_secret", Envs.GetEnvVar(Envs.E_SalesForceApiClientSecret) }
                 }
             );
             _logger.LogInformation($"Got token issued_at {tokenResponse?.issued_at}");
@@ -109,7 +105,10 @@ namespace  Magello
             T jsonData,
             ILogger _logger) 
         {
-            var url = Utils.CreateUrl(ApiHost, endpoint, query);
+            var url = Utils.CreateUrl(
+                Envs.GetEnvVar(Envs.E_SalesForceApiHost), 
+                endpoint, 
+                query);
             _logger.LogInformation($"Calling PATCH {url}");
             using HttpClient client = new ();
             InitClient(client);
@@ -123,7 +122,9 @@ namespace  Magello
             T jsonData,
             ILogger _logger) 
         {
-            var url = Utils.CreateUrl(ApiHost, endpoint, query);
+            var url = Utils.CreateUrl(Envs.GetEnvVar(Envs.E_SalesForceApiHost), 
+                endpoint, 
+                query);
             _logger.LogInformation($"Calling POST {url}");
             using HttpClient client = new ();
             InitClient(client);

@@ -10,17 +10,12 @@ namespace Magello.TeamTailorTimerFunction
     {
 
         private readonly ILogger _logger;
-        private readonly string StorageAccountUri = Environment.GetEnvironmentVariable("TABLE_STORAGE_URI") ?? "";
-        private readonly string StorageAccountName = Environment.GetEnvironmentVariable("TABLE_STORAGE_NAME") ?? "";
-        private readonly string StorageAccountKey = Environment.GetEnvironmentVariable("TABLE_STORAGE_KEY") ?? "";
-        private static readonly string SFIdCustomFieldId = Environment.GetEnvironmentVariable("SFID_CUSTOM_FIELD_ID") ?? "";
-        private static readonly string SFRefCustomFieldId = Environment.GetEnvironmentVariable("SFREF_CUSTOM_FIELD_ID") ?? "";
-        private static readonly string TeamTailorBaseUrl = Environment.GetEnvironmentVariable("TEAMTAILOR_BASE_URL") ?? "";
         private readonly string StorageTableName = "Applications";
 
         public TeamTailorTimerFunction(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<TeamTailorTimerFunction>();
+            Envs.PreFlightEnvChecks();
         }
 
         [Function("TeamTailorTimerFunction")]
@@ -28,7 +23,7 @@ namespace Magello.TeamTailorTimerFunction
         {
             _logger.LogInformation($"TeamTailorTimerFunction executed at: {DateTime.Now}");
             _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
-            
+
             // TODO Remove 
             // Don't run right now
             //return;
@@ -44,7 +39,7 @@ namespace Magello.TeamTailorTimerFunction
             var applications = await TeamTailorAPI.GetApplications(lastRun, _logger);
             // TODO Remove
             //var testingDate = new DateTime(2023, 1, 4);
-            var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
+            //var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
             _logger.LogInformation($"Found {applications.Count} applications since last run");
 
             // No applications - we're done
@@ -53,7 +48,8 @@ namespace Magello.TeamTailorTimerFunction
 
             // Get team tailor custom fields
             var customFields = await TeamTailorAPI.GetCustomFields(_logger);
-            if (customFields == null) {
+            if (customFields == null)
+            {
                 _logger.LogError("Custom fields was null");
                 return;
             }
@@ -65,56 +61,64 @@ namespace Magello.TeamTailorTimerFunction
             await SalesForceApi.RefreshAccessToken(_logger);
 
             // Loop all found applications
-            foreach (var application in applications) {
+            foreach (var application in applications)
+            {
                 // Sanity check
-                if (application == null) {
+                if (application == null)
+                {
                     _logger.LogInformation("Application was null");
                     continue;
                 }
 
                 // Get linked job for application
                 var job = await TeamTailorAPI.GetJobFromApplication(application, _logger);
-                if (job == null) {
+                if (job == null)
+                {
                     _logger.LogInformation("Job was null");
                     continue;
                 }
 
                 // Get custom field values
                 var fieldValues = await TeamTailorAPI.GetCustomFieldValues(job, _logger);
-                if (fieldValues == null || fieldValues.Count == 0) {
+                if (fieldValues == null || fieldValues.Count == 0)
+                {
                     _logger.LogInformation("Job has no custom field values");
                     continue;
                 }
 
-                if (!fieldValues.ContainsKey(SFIdCustomFieldId)) {
+                if (!fieldValues.ContainsKey(Envs.GetEnvVar(Envs.E_SalesForceCustomFieldId)))
+                {
                     _logger.LogInformation("Job has no custom field value for salesforce id");
-                    continue;             
+                    continue;
                 }
 
-                var opportunityId = fieldValues[SFIdCustomFieldId];
+                var opportunityId = fieldValues[Envs.GetEnvVar(Envs.E_SalesForceCustomFieldId)];
 
                 // Try to get saved application
-                var existingApplication = tableClient.Query<ApplicationTableEntity>(e => 
+                var existingApplication = tableClient.Query<ApplicationTableEntity>(e =>
                     e.ApplicationId == application["id"].GetValue<string>()
                 ).FirstOrDefault();
 
-                if (existingApplication != null) {
+                if (existingApplication != null)
+                {
                     // This application has already been processed
                     _logger.LogInformation(
-                        $"Application with id {application["id"].GetValue<string>()} already exists");
+                        $"Application with id {application["id"].GetValue<string>()} already processed");
                     continue;
                 }
 
                 var candidate = await TeamTailorAPI.GetCandidateFromApplication(
-                    application, 
+                    application,
                     _logger);
-                if (candidate == null) {
+                if (candidate == null)
+                {
                     _logger.LogInformation("Could not get candidate from application");
                     continue;
                 }
 
                 // Add the application to table storage
-                var newTableEntity = new ApplicationTableEntity() {
+                var newTableEntity = new ApplicationTableEntity()
+                {
                     ApplicationId = application["id"].GetValue<string>(),
                     RowKey = application["id"].GetValue<string>()
                 };
@@ -124,25 +128,29 @@ namespace Magello.TeamTailorTimerFunction
                 // Create Salesforce case for application
                 var jobId = job["data"]["id"];
                 var candidateId = candidate["data"]["id"];
-                var teamTailorCandidateLink = $"{TeamTailorBaseUrl}/jobs/{jobId}/stages/candidate/{candidateId}";
+                var teamTailorCandidateLink = $"{Envs.GetEnvVar(Envs.E_TeamTailorBaseUrl)}/jobs/{jobId}/stages/candidate/{candidateId}";
                 await SalesForceApi.CreateCase(opportunityId, teamTailorCandidateLink, _logger);
             }
 
         }
 
-        private async Task<TableClient> GetTableClient(ILogger _logger) {
-            _logger.LogInformation($"Getting TableClient for {StorageAccountName}");
-            var tableClient = new TableClient(    
-                new Uri(StorageAccountUri),
+        private async Task<TableClient> GetTableClient(ILogger _logger)
+        {
+            _logger.LogInformation($"Getting TableClient for {Envs.GetEnvVar(Envs.E_AzStorageAccountName)}");
+            var tableClient = new TableClient(
+                new Uri(Envs.GetEnvVar(Envs.E_AzStorageAccountUri)),
                 StorageTableName,
-                new TableSharedKeyCredential(StorageAccountName, StorageAccountKey));
+                new TableSharedKeyCredential(
+                    Envs.GetEnvVar(Envs.E_AzStorageAccountName), 
+                    Envs.GetEnvVar(Envs.E_AzStorageAccountKey)));
             await tableClient.CreateIfNotExistsAsync();
             _logger.LogInformation("TableClient OK");
             return tableClient;
         }
     }
 
-    public class ApplicationTableEntity : ITableEntity {
+    public class ApplicationTableEntity : ITableEntity
+    {
         public string ApplicationId { get; set; } = "";
         public string PartitionKey { get; set; } = "";
         public string RowKey { get; set; } = "";

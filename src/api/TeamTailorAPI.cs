@@ -7,7 +7,6 @@ namespace Magello {
     
     public static class TeamTailorAPI {
 
-        private static readonly string? ApiToken = Environment.GetEnvironmentVariable("TEAMTAILOR_API_TOKEN");
         private static readonly string ApiHost= "api.teamtailor.com";
         private static readonly string ApiVersion = "v1";
 
@@ -164,7 +163,7 @@ namespace Magello {
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.api+json");
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-                "Token", $"token={ApiToken}"
+                "Token", $"token={Envs.GetEnvVar(Envs.E_TeamTailorApiToken)}"
             );
             client.DefaultRequestHeaders.Add("X-Api-Version", "20210218");
         }

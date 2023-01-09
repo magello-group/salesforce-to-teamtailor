@@ -5,9 +5,6 @@ namespace Magello {
 public static class Mappings {
 
         public static readonly string SfRefTagPrefix = "sfref:";
-        public static readonly string SfIdTagPrefix = "sfid:";
-        private static readonly string SFIdCustomFieldId = Environment.GetEnvironmentVariable("SFID_CUSTOM_FIELD_ID") ?? "";
-        private static readonly string SFRefCustomFieldId = Environment.GetEnvironmentVariable("SFREF_CUSTOM_FIELD_ID") ?? "";
 
         public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob) {
             JsonNode ttJob = new JsonObject();
@@ -59,7 +56,8 @@ public static class Mappings {
             fieldValues["data"]["relationships"] = new JsonObject();
             fieldValues["data"]["relationships"]["custom-field"] = new JsonObject();
             fieldValues["data"]["relationships"]["custom-field"]["data"] = new JsonObject();
-            fieldValues["data"]["relationships"]["custom-field"]["data"]["id"] = int.Parse(SFIdCustomFieldId);
+            fieldValues["data"]["relationships"]["custom-field"]["data"]["id"] = 
+                int.Parse(Envs.GetEnvVar(Envs.E_SalesForceCustomFieldId));
             fieldValues["data"]["relationships"]["custom-field"]["data"]["type"] = "custom-fields";
             fieldValues["data"]["relationships"]["owner"] = new JsonObject();
             fieldValues["data"]["relationships"]["owner"]["data"] = new JsonObject();

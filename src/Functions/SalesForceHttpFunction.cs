@@ -16,6 +16,7 @@ namespace Magello.SalesForceHttpFunction
         public SalesForceHttpFunction(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<SalesForceHttpFunction>();
+            Envs.PreFlightEnvChecks();
         }
 
         [Function("SalesForceHttpFunction")]
