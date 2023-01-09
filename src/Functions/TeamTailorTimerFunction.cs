@@ -1,8 +1,6 @@
-using System;
 using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
-using Azure.Data.Tables.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
@@ -31,6 +29,7 @@ namespace Magello.TeamTailorTimerFunction
             _logger.LogInformation($"TeamTailorTimerFunction executed at: {DateTime.Now}");
             _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
             
+            // TODO Remove 
             // Don't run right now
             //return;
 
@@ -42,8 +41,9 @@ namespace Magello.TeamTailorTimerFunction
             _logger.LogInformation($"Last run was at {lastRun.ToString()}");
 
             // Get applications created since date of last run
-            //var applications = await TeamTailorAPI.GetApplications(lastRun, _logger);
-            var testingDate = new DateTime(2023, 1, 4);
+            var applications = await TeamTailorAPI.GetApplications(lastRun, _logger);
+            // TODO Remove
+            //var testingDate = new DateTime(2023, 1, 4);
             var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
             _logger.LogInformation($"Found {applications.Count} applications since last run");
 
