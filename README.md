@@ -89,4 +89,6 @@ azure function (teamtailor -> salesforce)
 # TODO
 
 * Import changeset to production
-* Improve documentation for upkeep
+* User user "Insights Integration" - modify profile
+* Check if possible to change domain from r2m to magello
+* bit.ly url used in custom settings because of length limit of 100 (is 250 in sandbox)

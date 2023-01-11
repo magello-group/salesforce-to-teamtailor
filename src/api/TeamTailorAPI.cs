@@ -42,12 +42,15 @@ namespace Magello {
 
             Dictionary<string, string> fieldValues = new Dictionary<string, string>();
             foreach (var result in values) {
-                foreach (var value in result?["data"]?.AsArray()) {
+                var data = result?["data"];
+                if (data == null)
+                    continue;
+                foreach (var value in data.AsArray()) {
                     var fieldLink = value?["relationships"]?["custom-field"]?["links"]?["related"]?.GetValue<string>();
                     if (fieldLink == null)
                         continue;
                     var field = await Get(fieldLink, _logger);
-                    if (field == null && field.Count == 0)
+                    if (field == null || field.Count == 0)
                         continue;
                     var fieldId = field[0]["data"]?["id"]?.GetValue<string>();
                     var fieldValue = value?["attributes"]?["value"]?.GetValue<string>();
@@ -86,9 +89,12 @@ namespace Magello {
             if (applications == null)
                 return applicationData;
             foreach (var application in applications) {
-                if (!((JsonObject)application).ContainsKey("data"))
+                if (application == null || !(application is JsonObject data))
                     continue;
-                foreach (var obj in (JsonArray)application["data"]) {
+                if (!data.ContainsKey("data") || data["data"] == null)
+                    continue;
+                var dataArray = data["data"].AsArray();
+                foreach (var obj in dataArray) {
                     var unlinkedObj = obj.Deserialize<JsonNode>();
                     applicationData.Add(unlinkedObj);
                 }

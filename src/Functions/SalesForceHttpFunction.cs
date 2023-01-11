@@ -61,8 +61,22 @@ namespace Magello.SalesForceHttpFunction
 
             var createdJob = JsonSerializer.Deserialize<JsonNode>(content, Utils.GetJsonSerializer());
             
+            if (createdJob == null) {
+                _logger.LogError($"Unable to deserialize TeamTailor job: {content}");
+                var errorResponse = req.CreateResponse(HttpStatusCode.BadRequest);
+                await errorResponse.WriteAsJsonAsync(new SalesForceResponse() { Status = "error"});
+                return errorResponse;
+            }
+
             // Add custom field values to the job
             var customFieldValues = Mappings.CreateCustomFieldValues(sfData, createdJob);
+            if (customFieldValues == null) {
+                _logger.LogError($"Unable to create custom field values: {content}");
+                var errorResponse = req.CreateResponse(HttpStatusCode.BadRequest);
+                await errorResponse.WriteAsJsonAsync(new SalesForceResponse() { Status = "error"});
+                return errorResponse;
+            }
+
             _logger.LogInformation($"Custom value json: {Utils.JsonNodeToString(customFieldValues)}");
             apiResponse = await TeamTailorAPI.CreateCustomFieldMappings(customFieldValues, _logger);
             content = await apiResponse.Content.ReadAsStringAsync();
