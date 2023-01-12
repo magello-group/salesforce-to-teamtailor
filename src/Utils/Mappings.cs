@@ -7,31 +7,34 @@ public static class Mappings {
         public static readonly string SfRefTagPrefix = "sfref:";
 
         public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob) {
-            JsonNode ttJob = new JsonObject();
-            if (sfJob == null)
+            var ttJob = new JsonObject();
+            if (sfJob == null || sfJob.TeamTailorUserId == null)
                 return ttJob;
 
-            ttJob["data"] = new JsonObject();
-
-            ttJob["data"]["type"] = "jobs";
-            ttJob["data"]["attributes"] = new JsonObject();
-            ttJob["data"]["attributes"]["title"] = sfJob.Name;
-            ttJob["data"]["attributes"]["body"] = Utils.TemplateTeamTailorBody(sfJob);
-            ttJob["data"]["attributes"]["picture"] = Utils.GetRandomPictureUrl();
-            ttJob["data"]["attributes"]["status"] = "draft";
+            var data = new JsonObject();
+            data["type"] = "jobs";
             
-            // Add tags
-            ttJob["data"]["attributes"]["tags"] = new JsonArray(
+            var attributes = new JsonObject();
+            attributes["title"] = sfJob.Name;
+            attributes["body"] = Utils.TemplateTeamTailorBody(sfJob);
+            attributes["picture"] = Utils.GetRandomPictureUrl();
+            attributes["status"] = "draft";
+            attributes["tags"] = new JsonArray(
                 "salesforce",
                 $"{sfJob.InternalRefNr}"
             );
-            
-            ttJob["data"]["relationships"] = new JsonObject();
-            ttJob["data"]["relationships"]["user"] = new JsonObject();
-            ttJob["data"]["relationships"]["user"]["data"] = new JsonObject();
-            ttJob["data"]["relationships"]["user"]["data"]["type"] = "users";
-            ttJob["data"]["relationships"]["user"]["data"]["id"] = 
-                int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""));
+
+            var relationships = new JsonObject();
+            var user = new JsonObject();
+            var userData = new JsonObject();
+            userData["type"] = "users";
+            userData["id"] = int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""));
+            user["data"] = userData;
+            relationships["user"] = user;
+
+            data["attributes"] = attributes;
+            data["relationships"] = relationships;
+            ttJob["data"] = data;
 
             return ttJob;
         }
