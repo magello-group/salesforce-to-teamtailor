@@ -19,8 +19,9 @@ namespace Magello.TeamTailorTimerFunction
         }
 
         [Function("TeamTailorTimerFunction")]
-        public async Task Run([TimerTrigger("0 */5 * * * *", RunOnStartup = true)] MyInfo myTimer)
+        public async Task Run([TimerTrigger("0 * * * * *", RunOnStartup = false)] MyInfo myTimer)
         {
+            // 0 */5 * * * *
             _logger.LogInformation($"TeamTailorTimerFunction executed at: {DateTime.Now}");
             _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
 
