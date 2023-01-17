@@ -12,26 +12,28 @@ Salesforce UI button ->
     calls az function
 
 azure function (salesforce -> teamtailor):
-    * deserializes data
-    * maps sf deserialized object to JsonNode
-        * templates tt job body from templates/teamtailor-body.scriban-html
-    * creates teamtailor job
-    * adds custom field values with salesforce id to job
+    
+* deserializes data
+* maps sf deserialized object to JsonNode
+    * templates tt job body from templates/teamtailor-body.scriban-html
+* creates teamtailor job
+* adds custom field values with salesforce id to job
 
 azure function (teamtailor -> salesforce)
-    * polls teamtailor applications since last run
-    * if no new = exit
-    * fetches custom field definitions
-    * refreshes salesforce access token
-    * loops applications:
-        * get job for application
-        * get custom field values for job
-        * if no salesforce id found in field values = exit (not a salesforce job)
-        * check if application already processed
-        * if yes = exit
-        * get candidate from application
-        * add application to table storage as processed
-        * create case in salesforce
+
+* polls teamtailor applications since last run
+* if no new = exit
+* fetches custom field definitions
+* refreshes salesforce access token
+* loops applications:
+    * get job for application
+    * get custom field values for job
+    * if no salesforce id found in field values = exit (not a salesforce job)
+    * check if application already processed
+    * if yes = exit
+    * get candidate from application
+    * add application to table storage as processed
+    * create case in salesforce
 
 # Salesforce modifications
 
