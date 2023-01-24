@@ -54,8 +54,11 @@ public static class Mappings {
             // Add data root object
             var data = new JsonObject();
             data["type"] = "custom-field-values";
+
+            // Add custom field value to object
             var attributes = new JsonObject();
             attributes["value"] = sfJob.Id;
+            data["attributes"] = attributes;
 
             var relationships = new JsonObject();
             var customField = new JsonObject();
