@@ -19,6 +19,9 @@ public static class Mappings {
             attributes["body"] = Utils.TemplateTeamTailorBody(sfJob);
             attributes["picture"] = Utils.GetRandomPictureUrl();
             attributes["status"] = "draft";
+            var now = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK");
+            attributes["created-at"] = now;
+            attributes["updated-at"] = now;
             attributes["tags"] = new JsonArray(
                 "salesforce",
                 $"{sfJob.InternalRefNr}"

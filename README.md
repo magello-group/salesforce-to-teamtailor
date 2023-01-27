@@ -2,6 +2,13 @@
 
 Azure function middleware to handle API-to-API communication between SalesForce and TeamTailor
 
+# To redesign the Teamtailor job body
+
+1) Open `src/templates/teamtailor-body.scriban-html`
+2) Use fields mapped in `utils/Utils.cs` function `TemplateTeamTailorBody(..)`
+3) The template is templated using `scriban` and Teamtailor jobs accept `HTML` as body
+4) Redeploy the function (function is `magellosalesforceteamtailor` on Azure for publish profile download)
+
 # Execution flow
 
 Salesforce UI button -> 

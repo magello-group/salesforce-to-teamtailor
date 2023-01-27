@@ -5,7 +5,7 @@
 <div>{{ Description }}</div>
 <p><br></p>
 <h3>Period</h3>
-<p>J{{ AgreementPeriod }}</p>
+<p>{{ AgreementPeriod }}</p>
 <h3>Arbetsplats</h3>
 <p>{{ WorkPlace }}</p>
 <h3>Referensnr</h3>
