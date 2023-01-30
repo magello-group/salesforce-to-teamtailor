@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Scriban;
@@ -37,15 +38,26 @@ namespace Magello {
             var templatePath = "src/templates/teamtailor-body.scriban-html";
             var template = Template.Parse(File.ReadAllText(templatePath));
             var so = new ScriptObject();
+            // Parse the last answer date part, which is sent like:
+            // 2 January 2023
+            // We'd rather do the parsing here instead of doing formatting in SF
+            var lastAnswerDatePart = job.LastAnswerDatePart;
+            DateTime lastAnswerDatePartDate = DateTime.Now;
+            DateTime.TryParseExact(
+                    lastAnswerDatePart, 
+                    "d MMMM yyyy", 
+                    new CultureInfo("en-US"),
+                    DateTimeStyles.None,
+                    out lastAnswerDatePartDate);
             so.Add("Name", job.Name);
             so.Add("WorkPlace", job.WorkPlace);
             so.Add("AgreementPeriod", job.AgreementPeriod);
-            so.Add("Description", job.Description);
+            so.Add("Description", job.Description?.Replace(Environment.NewLine, "\n"));
             so.Add("InternalRefNr", job.InternalRefNr);
             so.Add("Now", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
             so.Add("Extent", job.Extent);
-            so.Add("LastAnswerDatePart", job.LastAnswerDatePart);
-            so.Add("Requirements", job.Requirements);
+            so.Add("LastAnswerDatePart", lastAnswerDatePartDate.ToString("yyyy-MM-dd"));
+            so.Add("Requirements", job.Requirements?.Replace(Environment.NewLine, "\n"));
             var context = new TemplateContext();
             context.PushGlobal(so);
             return template.Render(context);
