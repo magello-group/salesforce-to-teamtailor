@@ -1,12 +1,13 @@
 using System.Text.Json.Nodes;
 
-namespace Magello {
-
-public static class Mappings {
-
+namespace Magello
+{
+    public static class Mappings
+    {
         public static readonly string SfRefTagPrefix = "sfref:";
 
-        public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob) {
+        public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob)
+        {
             var ttJob = new JsonObject();
             if (sfJob.TeamTailorUserId == null)
                 return ttJob;
@@ -25,6 +26,9 @@ public static class Mappings {
                 ["status"] = "draft",
                 ["created-at"] = now,
                 ["updated-at"] = now,
+                ["resume_requirement"] = "required",
+                ["cover-letter-requirement"] = "off",
+                ["apply-button-text"] = "ansök här",
                 ["tags"] = new JsonArray(
                     "salesforce",
                     $"{sfJob.InternalRefNr}"
@@ -42,9 +46,83 @@ public static class Mappings {
                 ["data"] = userData
             };
 
+            // 1136518 is 'Vilket är ditt prisförslag'
+            // 1136520 is 'Ange konsultens tillgänglighet'
+            var questionData = new JsonObject
+            {
+                ["data"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "1136518",
+                        ["type"] = "questions"
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "1136520",
+                        ["type"] = "questions"
+                    }
+                }
+            };
+
+            // The picked question ids have been taken from the template job
+            var pickedQuestions = new JsonObject
+            {
+                ["data"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "14035840",
+                        ["type"] = "picked-questions"
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "14035841",
+                        ["type"] = "picked-questions"
+                    }
+                }
+            };
+
+            // The stages ids has also been taken from the template job
+            var stages = new JsonObject
+            {
+                ["data"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "15389830",
+                        ["type"] = "stages"
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "15389831",
+                        ["type"] = "stages"
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "15389832",
+                        ["type"] = "stages"
+                    },
+
+                    new JsonObject
+                    {
+                        ["id"] = "15389834",
+                        ["type"] = "stages"
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "15699653",
+                        ["type"] = "stages"
+                    }
+                }
+            };
+
             var relationships = new JsonObject
             {
-                ["user"] = user
+                ["user"] = user,
+                ["questions"] = questionData,
+                ["picked-questions"] = pickedQuestions,
+                ["stages"] = stages
             };
 
             data["attributes"] = attributes;
@@ -55,8 +133,8 @@ public static class Mappings {
         }
 
         public static JsonNode? CreateCustomFieldValues(
-            SalesForceJob sfJob, 
-            JsonNode ttJob) 
+            SalesForceJob? sfJob,
+            JsonNode? ttJob)
         {
             var fieldValues = new JsonObject();
 
@@ -101,5 +179,4 @@ public static class Mappings {
             return fieldValues;
         }
     }
-
 }
