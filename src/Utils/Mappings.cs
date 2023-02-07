@@ -26,7 +26,7 @@ namespace Magello
                 ["status"] = "draft",
                 ["created-at"] = now,
                 ["updated-at"] = now,
-                ["resume_requirement"] = "required",
+                ["resume-requirement"] = "required",
                 ["cover-letter-requirement"] = "off",
                 ["apply-button-text"] = "ansök här",
                 ["tags"] = new JsonArray(
