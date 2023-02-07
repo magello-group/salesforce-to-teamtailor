@@ -65,64 +65,10 @@ namespace Magello
                 }
             };
 
-            // The picked question ids have been taken from the template job
-            var pickedQuestions = new JsonObject
-            {
-                ["data"] = new JsonArray
-                {
-                    new JsonObject
-                    {
-                        ["id"] = "14035840",
-                        ["type"] = "picked-questions"
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "14035841",
-                        ["type"] = "picked-questions"
-                    }
-                }
-            };
-
-            // The stages ids has also been taken from the template job
-            var stages = new JsonObject
-            {
-                ["data"] = new JsonArray
-                {
-                    new JsonObject
-                    {
-                        ["id"] = "15389830",
-                        ["type"] = "stages"
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "15389831",
-                        ["type"] = "stages"
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "15389832",
-                        ["type"] = "stages"
-                    },
-
-                    new JsonObject
-                    {
-                        ["id"] = "15389834",
-                        ["type"] = "stages"
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "15699653",
-                        ["type"] = "stages"
-                    }
-                }
-            };
-
             var relationships = new JsonObject
             {
                 ["user"] = user,
-                ["questions"] = questionData,
-                ["picked-questions"] = pickedQuestions,
-                ["stages"] = stages
+                ["questions"] = questionData
             };
 
             data["attributes"] = attributes;
