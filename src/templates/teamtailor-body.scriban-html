@@ -14,5 +14,19 @@
 <br/>
 <p style="font-weight: bold;">Uppdragsbeskrivning:</p>
 <p style="white-space: pre-line;">{{ Description }}</p>
-<p style="font-weight: bold;">Obligatoriska krav:</p>
-<p style="white-space: pre-line;">{{ Requirements }}</p>
+{{ if Requirements }}
+    <p style="font-weight: bold;">Obligatoriska krav:</p>
+    <ul>
+    {{ for $requirement in Requirements }}
+        <li style="white-space: pre-line;">{{ $requirement }}</li>
+    {{ end }}
+    </ul>
+{{ end }}
+{{ if ExtraRequirements }}
+    <p style="font-weight: bold;">Mervärdeskrav:</p>
+    <ul>
+    {{ for $requirement in ExtraRequirements }}
+        <li style="white-space: pre-line;">{{ $requirement }}</li>
+    {{ end }}
+    </ul>
+{{ end }}

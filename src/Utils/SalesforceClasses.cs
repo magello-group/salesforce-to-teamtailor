@@ -14,6 +14,7 @@ namespace Magello {
         public string? WorkPlace { get; set; }
         public string? Extent { get; set; }
         public string? Requirements { get; set; }
+        public string? ExtraRequirements { get; set; }
         public string? Description { get; set; }
         public string? InternalRefNr { get; set; }
 

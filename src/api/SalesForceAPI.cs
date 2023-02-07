@@ -46,7 +46,7 @@ namespace  Magello
             "signature": "c2lnbmF0dXJl"
         } */
 
-        public async static Task RefreshAccessToken(ILogger _logger) {
+        public static async Task RefreshAccessToken(ILogger _logger) {
             if (!string.IsNullOrEmpty(ApiAccessToken))
                 return;
             var tokenResponse = await PostFormData<SalesForceOAuthResponse>(
@@ -66,7 +66,7 @@ namespace  Magello
                 ApiAccessToken = tokenResponse.access_token;
         }
 
-        public async static Task<HttpResponseMessage> CreateCase(
+        public static async Task<HttpResponseMessage> CreateCase(
             string opportunityId,
             string teamTailorCandidateLink
             , ILogger _logger) 
@@ -80,11 +80,11 @@ namespace  Magello
             return await Post<SalesforceCase>($"{ApiPath}/Case", null, sfCase, _logger);
         }
 
-        public async static Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
+        public static async Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
             return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, _logger);
         }
 
-        private async static Task<T?> PostFormData<T>(
+        private static async Task<T?> PostFormData<T>(
             string url, 
             ILogger _logger, 
             Dictionary<string, string> formData) 
@@ -99,7 +99,7 @@ namespace  Magello
             return JsonSerializer.Deserialize<T>(responseBody, Utils.GetJsonSerializer());
         }
 
-        private async static Task<HttpResponseMessage> Patch<T>(
+        private static async Task<HttpResponseMessage> Patch<T>(
             string endpoint,
             Dictionary<string, string>? query,
             T jsonData,
@@ -116,7 +116,7 @@ namespace  Magello
             return await client.PatchAsync(url, request.Content);
         }
 
-        private async static Task<HttpResponseMessage> Post<T>(
+        private static async Task<HttpResponseMessage> Post<T>(
             string endpoint,
             Dictionary<string, string>? query,
             T jsonData,

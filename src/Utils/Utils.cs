@@ -35,7 +35,7 @@ namespace Magello {
         }
 
         public static string TemplateTeamTailorBody(SalesForceJob job) {
-            var templatePath = "src/templates/teamtailor-body.scriban-html";
+            const string templatePath = "src/templates/teamtailor-body.scriban-html";
             var template = Template.Parse(File.ReadAllText(templatePath));
             var so = new ScriptObject();
             // Parse the last answer date part, which is sent like:
@@ -43,7 +43,7 @@ namespace Magello {
             // We'd rather do the parsing here instead of doing formatting in SF
             var lastAnswerDatePart = job.LastAnswerDatePart;
             DateTime lastAnswerDatePartDate = DateTime.Now;
-            DateTime.TryParseExact(
+            DateTime.TryParseExact( // TODO: this is broken
                     lastAnswerDatePart, 
                     "d MMMM yyyy", 
                     new CultureInfo("en-US"),
@@ -57,7 +57,8 @@ namespace Magello {
             so.Add("Now", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
             so.Add("Extent", job.Extent);
             so.Add("LastAnswerDatePart", lastAnswerDatePartDate.ToString("yyyy-MM-dd"));
-            so.Add("Requirements", job.Requirements?.Replace(Environment.NewLine, "\n"));
+            so.Add("Requirements", job.Requirements?.Split(Environment.NewLine));
+            so.Add("ExtraRequirements", job.ExtraRequirements?.Split(Environment.NewLine));
             var context = new TemplateContext();
             context.PushGlobal(so);
             return template.Render(context);
