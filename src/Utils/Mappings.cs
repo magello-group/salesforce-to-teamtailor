@@ -28,7 +28,7 @@ namespace Magello
                 ["updated-at"] = now,
                 ["resume-requirement"] = "required",
                 ["cover-letter-requirement"] = "off",
-                ["apply-button-text"] = "ansök här",
+                ["apply-button-text"] = "ANSÖK HÄR",
                 ["tags"] = new JsonArray(
                     "salesforce",
                     $"{sfJob.InternalRefNr}"
@@ -46,7 +46,7 @@ namespace Magello
                 ["data"] = userData
             };
 
-            // 1136518 is 'Vilket är ditt prisförslag'
+            // 1145804 is 'Vilket är ditt prisförslag'
             // 1136520 is 'Ange konsultens tillgänglighet'
             var questionData = new JsonObject
             {
