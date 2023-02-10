@@ -4,6 +4,8 @@ namespace Magello
 {
     public static class Mappings
     {
+        private const string VilketArDittPrisforslag = "1145804";
+        private const string AngeKonsultensTillganglighet = "1136520";
         public static readonly string SfRefTagPrefix = "sfref:";
 
         public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob)
@@ -46,20 +48,18 @@ namespace Magello
                 ["data"] = userData
             };
 
-            // 1145804 is 'Vilket är ditt prisförslag'
-            // 1136520 is 'Ange konsultens tillgänglighet'
             var questionData = new JsonObject
             {
                 ["data"] = new JsonArray
                 {
                     new JsonObject
                     {
-                        ["id"] = "1145804",
+                        ["id"] = VilketArDittPrisforslag,
                         ["type"] = "questions"
                     },
                     new JsonObject
                     {
-                        ["id"] = "1136520",
+                        ["id"] = AngeKonsultensTillganglighet,
                         ["type"] = "questions"
                     }
                 }

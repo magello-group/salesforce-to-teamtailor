@@ -95,6 +95,23 @@ azure function (teamtailor -> salesforce)
 | SFID_CUSTOM_FIELD_ID | ID of the custom field used for the salesforceid. This can be obtained through an API call to: https://api.teamtailor.com/v1/custom-fields | 
 | TEAMTAILOR_BASE_URL | Base url to the company on teamtailor, e.g. https://app.teamtailor.com/companies/ABCD-ABCab12 |
 
+# Deploy functions to Azure through Rider with Azure toolkit
+
+### Prerequisites
+
+* You need to have Azure CLI installed and be logged in to Magello workspace (make sure you have rights to view resources in the right subscription).
+* You also need to have Azure Toolkit for Rider.
+
+### Deploy
+
+Create a new `Run configuration`, under `.NET Publish` choose `Azure - Publish Function App`, select `Use Existing Function App` and make sure `magellosalesforceteamtailor` 
+app is selected. Save the configuration and press run. Rider will now build the function app and deploy the functions as a .zip-file to Azure.
+
+*Important to note* - Rider decided to change the worker runtime (from `dotnet-isolated` to `dotnet`) everytime I made a new deploy which stops the 
+Functions from running completely, a work-around for this is to go to the Function App in Azure portal click on `Configuration` under `Settings`
+and setting the variable `FUNCTIONS_WORKER_RUNTIME` to `dotnet-isolated` manually. Don't forget to save! This should restart the functions automatically,
+but sometimes I had to manually start the functions again, this can be done on the `Overview`-page.
+
 # TODO
 
 * Import changeset to production

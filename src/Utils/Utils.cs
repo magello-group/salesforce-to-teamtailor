@@ -48,7 +48,7 @@ namespace Magello
             // We'd rather do the parsing here instead of doing formatting in SF
             var lastAnswerDatePart = job.LastAnswerDatePart;
 
-            var tryParseExact = DateTime.TryParseExact( // TODO: this is broken
+            var tryParseExact = DateTime.TryParseExact(
                 lastAnswerDatePart,
                 "yyyy-MM-dd",
                 new CultureInfo("en-US"),
