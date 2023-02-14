@@ -1,39 +1,75 @@
 using System.Text.Json.Nodes;
 
-namespace Magello {
-
-public static class Mappings {
-
+namespace Magello
+{
+    public static class Mappings
+    {
+        private const string VilketArDittPrisforslag = "1145804";
+        private const string AngeKonsultensTillganglighet = "1136520";
         public static readonly string SfRefTagPrefix = "sfref:";
 
-        public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob) {
+        public static JsonNode SalesForceToTeamTailor(SalesForceJob sfJob)
+        {
             var ttJob = new JsonObject();
-            if (sfJob == null || sfJob.TeamTailorUserId == null)
+            if (sfJob.TeamTailorUserId == null)
                 return ttJob;
 
-            var data = new JsonObject();
-            data["type"] = "jobs";
-            
-            var attributes = new JsonObject();
-            attributes["title"] = sfJob.Name;
-            attributes["body"] = Utils.TemplateTeamTailorBody(sfJob);
-            attributes["picture"] = Utils.GetRandomPictureUrl();
-            attributes["status"] = "draft";
-            var now = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK");
-            attributes["created-at"] = now;
-            attributes["updated-at"] = now;
-            attributes["tags"] = new JsonArray(
-                "salesforce",
-                $"{sfJob.InternalRefNr}"
-            );
+            var data = new JsonObject
+            {
+                ["type"] = "jobs"
+            };
 
-            var relationships = new JsonObject();
-            var user = new JsonObject();
-            var userData = new JsonObject();
-            userData["type"] = "users";
-            userData["id"] = int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""));
-            user["data"] = userData;
-            relationships["user"] = user;
+            var now = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK");
+            var attributes = new JsonObject
+            {
+                ["title"] = sfJob.Name,
+                ["body"] = Utils.TemplateTeamTailorBody(sfJob),
+                ["picture"] = Utils.GetRandomPictureUrl(),
+                ["status"] = "draft",
+                ["created-at"] = now,
+                ["updated-at"] = now,
+                ["resume-requirement"] = "required",
+                ["cover-letter-requirement"] = "off",
+                ["apply-button-text"] = "ANSÖK HÄR",
+                ["tags"] = new JsonArray(
+                    "salesforce",
+                    $"{sfJob.InternalRefNr}"
+                )
+            };
+
+            var userData = new JsonObject
+            {
+                ["type"] = "users",
+                ["id"] = int.Parse(sfJob.TeamTailorUserId.Replace(" ", ""))
+            };
+
+            var user = new JsonObject
+            {
+                ["data"] = userData
+            };
+
+            var questionData = new JsonObject
+            {
+                ["data"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = VilketArDittPrisforslag,
+                        ["type"] = "questions"
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = AngeKonsultensTillganglighet,
+                        ["type"] = "questions"
+                    }
+                }
+            };
+
+            var relationships = new JsonObject
+            {
+                ["user"] = user,
+                ["questions"] = questionData
+            };
 
             data["attributes"] = attributes;
             data["relationships"] = relationships;
@@ -43,8 +79,8 @@ public static class Mappings {
         }
 
         public static JsonNode? CreateCustomFieldValues(
-            SalesForceJob sfJob, 
-            JsonNode ttJob) 
+            SalesForceJob? sfJob,
+            JsonNode? ttJob)
         {
             var fieldValues = new JsonObject();
 
@@ -89,5 +125,4 @@ public static class Mappings {
             return fieldValues;
         }
     }
-
 }
