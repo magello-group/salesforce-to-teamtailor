@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Magello {
@@ -10,11 +11,12 @@ namespace Magello {
         private static readonly string ApiHost= "api.teamtailor.com";
         private static readonly string ApiVersion = "v1";
 
-        public async static Task<HttpResponseMessage> CreateCustomFieldMappings(JsonNode values, ILogger _logger) {
+        public async static Task<HttpResponseMessage> CreateCustomFieldMappings(JsonNode values, IConfiguration configuration, ILogger _logger) {
             return await Post<JsonNode>(
                 $"{ApiVersion}/custom-field-values",
                 null,
                 values,
+                configuration,
                 _logger
             );
         }
@@ -23,6 +25,7 @@ namespace Magello {
         // mappings for a given job
         public async static Task<Dictionary<string, string>?> GetCustomFieldValues(
             JsonNode job, 
+            IConfiguration configuration,
             ILogger _logger)
         {
             var link = 
@@ -33,6 +36,7 @@ namespace Magello {
             }
             var values = await Get(
                 link,
+                configuration,
                 _logger
             );
 
@@ -49,7 +53,7 @@ namespace Magello {
                     var fieldLink = value?["relationships"]?["custom-field"]?["links"]?["related"]?.GetValue<string>();
                     if (fieldLink == null)
                         continue;
-                    var field = await Get(fieldLink, _logger);
+                    var field = await Get(fieldLink, configuration, _logger);
                     if (field == null || field.Count == 0)
                         continue;
                     var fieldId = field[0]["data"]?["id"]?.GetValue<string>();
@@ -62,19 +66,21 @@ namespace Magello {
             return fieldValues;
         }
 
-        public async static Task<JsonNode?> GetCustomFields(ILogger _logger) {
+        public async static Task<JsonNode?> GetCustomFields(IConfiguration configuration, ILogger _logger) {
             var fields = await Get(
                 Utils.CreateUrl(
                     ApiHost,
                     $"{ApiVersion}/custom-fields",
                     null
                 ),
+                configuration,
                 _logger);
             return fields == null ? null : fields[0];
         }
 
         public async static Task<JsonArray> GetApplications(
             DateTime since, 
+            IConfiguration configuration,
             ILogger _logger) 
         {
             var applications = await Get(
@@ -84,6 +90,7 @@ namespace Magello {
                     new Dictionary<string, string>() {
                         { "filter[created-at][from]", since.ToString("yyyy-MM-dd") }
                     }),
+                configuration,
                 _logger);
             JsonArray applicationData = new ();
             if (applications == null)
@@ -104,37 +111,38 @@ namespace Magello {
 
         public async static Task<JsonNode?> GetCandidateFromApplication(
             JsonNode application,
+            IConfiguration configuration,
             ILogger _logger
         ) {
             var link = application["relationships"]?["candidate"]?["links"]?["related"]?.GetValue<string>();
             if (link == null)
                 return null;
-            var candidates = await Get(link, _logger);
+            var candidates = await Get(link, configuration, _logger);
             if (candidates == null || candidates.Count() == 0)
                 return null;
             return candidates.First();
         }
 
-        public async static Task<JsonNode?> GetJobFromApplication(JsonNode application, ILogger _logger) {
+        public async static Task<JsonNode?> GetJobFromApplication(JsonNode application, IConfiguration configuration, ILogger _logger) {
             var link = application["relationships"]?["job"]?["links"]?["related"]?.GetValue<string>();
             if (link == null)
                 return null;
-            var jobs = await Get(link, _logger);
+            var jobs = await Get(link, configuration, _logger);
             if (jobs == null || jobs.Count() == 0)
                 return null;
             return jobs.First();
         }
 
-        public async static Task<HttpResponseMessage> CreateJob(JsonNode job, ILogger _logger) {
-            return await Post<JsonNode>($"{ApiVersion}/jobs", null, job, _logger);
+        public async static Task<HttpResponseMessage> CreateJob(JsonNode job, IConfiguration configuration, ILogger _logger) {
+            return await Post($"{ApiVersion}/jobs", null, job, configuration, _logger);
         }
 
         // Handles pagination
-        private async static Task<List<JsonNode>?> Get(string url, ILogger _logger) {
+        private async static Task<List<JsonNode>?> Get(string url, IConfiguration configuration, ILogger _logger) {
             _logger.LogInformation($"Calling GET {url}");
             var result = new List<JsonNode>();
             using HttpClient client = new ();
-            InitClient(client);
+            InitClient(client, configuration);
             var stringResponse = await client.GetStringAsync(url);
             var response = JsonSerializer.Deserialize<JsonNode>(stringResponse, Utils.GetJsonSerializer());
             if (response != null)
@@ -155,21 +163,25 @@ namespace Magello {
             string endpoint,
             Dictionary<string, string>? query,
             T jsonData,
+            IConfiguration configuration,
             ILogger _logger) 
         {
             var url = Utils.CreateUrl(ApiHost, endpoint, query);
             _logger.LogInformation($"Calling POST {url}");
             using HttpClient client = new ();
-            InitClient(client);
+            InitClient(client, configuration);
             var request = CreateJsonDataRequest<T>(jsonData);
             return await client.PostAsync(url, request.Content);
         }
 
-        private static void InitClient(HttpClient client) {
+        private static void InitClient(HttpClient client, IConfiguration configuration) {
+            var teamTailorApiToken = configuration.GetValue<string>(Envs.E_TeamTailorApiToken) ??
+                throw new InvalidOperationException($"{Envs.E_TeamTailorApiToken} not set in configuration");
+
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.api+json");
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-                "Token", $"token={Envs.GetEnvVar(Envs.E_TeamTailorApiToken)}"
+                "Token", $"token={teamTailorApiToken}"
             );
             client.DefaultRequestHeaders.Add("X-Api-Version", "20210218");
         }

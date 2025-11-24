@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Configuration;
 
 namespace Magello
 {
@@ -80,7 +81,8 @@ namespace Magello
 
         public static JsonNode? CreateCustomFieldValues(
             SalesForceJob? sfJob,
-            JsonNode? ttJob)
+            JsonNode? ttJob,
+            IConfiguration configuration)
         {
             var fieldValues = new JsonObject();
 
@@ -105,8 +107,11 @@ namespace Magello
             var owner = new JsonObject();
             var ownerData = new JsonObject();
 
+            var salesForceApiCustomFieldId = configuration.GetValue<string>(Envs.E_SalesForceCustomFieldId) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceCustomFieldId} not set in configuration");
+
             // Add custom field relationship
-            customFieldData["id"] = int.Parse(Envs.GetEnvVar(Envs.E_SalesForceCustomFieldId));
+            customFieldData["id"] = int.Parse(salesForceApiCustomFieldId);
             customFieldData["type"] = "custom-fields";
             customField["data"] = customFieldData;
             relationships["custom-field"] = customField;

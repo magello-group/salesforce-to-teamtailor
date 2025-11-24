@@ -1,7 +1,9 @@
+using System.Configuration;
 using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Magello.TeamTailorTimerFunction
@@ -10,12 +12,13 @@ namespace Magello.TeamTailorTimerFunction
     {
 
         private readonly ILogger _logger;
+        private readonly IConfiguration _configuration;
         private readonly string StorageTableName = "Applications";
 
-        public TeamTailorTimerFunction(ILoggerFactory loggerFactory)
+        public TeamTailorTimerFunction(ILoggerFactory loggerFactory, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<TeamTailorTimerFunction>();
-            Envs.PreFlightEnvChecks();
+            _configuration = configuration;
         }
 
         [Function("TeamTailorTimerFunction")]
@@ -37,7 +40,7 @@ namespace Magello.TeamTailorTimerFunction
             _logger.LogInformation($"Last run was at {lastRun.ToString()}");
 
             // Get applications created since date of last run
-            var applications = await TeamTailorAPI.GetApplications(lastRun, _logger);
+            var applications = await TeamTailorAPI.GetApplications(lastRun, _configuration, _logger);
             // TODO Remove
             //var testingDate = new DateTime(2023, 1, 4);
             //var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
@@ -48,7 +51,7 @@ namespace Magello.TeamTailorTimerFunction
                 return;
 
             // Get team tailor custom fields
-            var customFields = await TeamTailorAPI.GetCustomFields(_logger);
+            var customFields = await TeamTailorAPI.GetCustomFields(_configuration, _logger);
             if (customFields == null)
             {
                 _logger.LogError("Custom fields was null");
@@ -59,7 +62,7 @@ namespace Magello.TeamTailorTimerFunction
             var tableClient = await GetTableClient(_logger);
 
             // Get a fresh access token for the Salesforce API
-            await SalesForceApi.RefreshAccessToken(_logger);
+            await SalesForceApi.RefreshAccessToken(_configuration,_logger);
 
             // Loop all found applications
             foreach (var application in applications)
@@ -72,7 +75,7 @@ namespace Magello.TeamTailorTimerFunction
                 }
 
                 // Get linked job for application
-                var job = await TeamTailorAPI.GetJobFromApplication(application, _logger);
+                var job = await TeamTailorAPI.GetJobFromApplication(application, _configuration, _logger);
                 if (job == null)
                 {
                     _logger.LogInformation("Job was null");
@@ -80,20 +83,21 @@ namespace Magello.TeamTailorTimerFunction
                 }
 
                 // Get custom field values
-                var fieldValues = await TeamTailorAPI.GetCustomFieldValues(job, _logger);
+                var fieldValues = await TeamTailorAPI.GetCustomFieldValues(job, _configuration, _logger);
                 if (fieldValues == null || fieldValues.Count == 0)
                 {
                     _logger.LogInformation("Job has no custom field values");
                     continue;
                 }
 
-                if (!fieldValues.ContainsKey(Envs.GetEnvVar(Envs.E_SalesForceCustomFieldId)))
+                var salesForceCustomFieldId = _configuration.GetValue<string>(Envs.E_SalesForceCustomFieldId) ??
+                    throw new InvalidOperationException("SalesForceCustomFieldId not set in configuration");
+
+                if (!fieldValues.TryGetValue(salesForceCustomFieldId, out var opportunityId))
                 {
                     _logger.LogInformation("Job has no custom field value for salesforce id");
                     continue;
                 }
-
-                var opportunityId = fieldValues[Envs.GetEnvVar(Envs.E_SalesForceCustomFieldId)];
 
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(e =>
@@ -110,6 +114,7 @@ namespace Magello.TeamTailorTimerFunction
 
                 var candidate = await TeamTailorAPI.GetCandidateFromApplication(
                     application,
+                    _configuration,
                     _logger);
                 if (candidate == null)
                 {
@@ -129,23 +134,37 @@ namespace Magello.TeamTailorTimerFunction
                 // Create Salesforce case for application
                 var jobId = job["data"]!["id"]!;
                 var candidateId = candidate["data"]!["id"]!;
-                var teamTailorCandidateLink = $"{Envs.GetEnvVar(Envs.E_TeamTailorBaseUrl)}/jobs/{jobId}/stages/candidate/{candidateId}";
-                await SalesForceApi.CreateCase(opportunityId, teamTailorCandidateLink, _logger);
+                var teamTailorUrl = _configuration.GetValue<string>(Envs.E_TeamTailorBaseUrl) ??
+                    throw new InvalidOperationException("TeamTailorBaseUrl not set in configuration");
+
+                var teamTailorCandidateLink = $"{teamTailorUrl}/jobs/{jobId}/stages/candidate/{candidateId}";
+                await SalesForceApi.CreateCase(opportunityId, teamTailorCandidateLink, _configuration, _logger);
             }
 
         }
 
         private async Task<TableClient> GetTableClient(ILogger _logger)
         {
-            _logger.LogInformation($"Getting TableClient for {Envs.GetEnvVar(Envs.E_AzStorageAccountName)}");
+            var storageAccountName = _configuration.GetValue<string>(Envs.E_AzStorageAccountName) ??
+                throw new InvalidOperationException("AzStorageAccountName not set in configuration");
+
+            var storageAccountKey = _configuration.GetValue<string>(Envs.E_AzStorageAccountKey) ??
+                throw new InvalidOperationException("AzStorageAccountKey not set in configuration");
+
+            string storageAccountUri = _configuration.GetValue<string>(Envs.E_AzStorageAccountUri) ??
+                    throw new InvalidOperationException("AzStorageAccountUri not set in configuration");
+
+            _logger.LogInformation($"Getting TableClient for {storageAccountName}");
+
             var tableClient = new TableClient(
-                new Uri(Envs.GetEnvVar(Envs.E_AzStorageAccountUri)),
+                new Uri(storageAccountUri),
                 StorageTableName,
-                new TableSharedKeyCredential(
-                    Envs.GetEnvVar(Envs.E_AzStorageAccountName), 
-                    Envs.GetEnvVar(Envs.E_AzStorageAccountKey)));
+                new TableSharedKeyCredential( storageAccountName, storageAccountKey));
+
             await tableClient.CreateIfNotExistsAsync();
+
             _logger.LogInformation("TableClient OK");
+
             return tableClient;
         }
     }

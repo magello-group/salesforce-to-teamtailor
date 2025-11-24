@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Magello.SalesForceHttpFunction
@@ -10,11 +11,12 @@ namespace Magello.SalesForceHttpFunction
     public class SalesForceHttpFunction
     {
         private readonly ILogger _logger;
+        private readonly IConfiguration _configuration;
 
-        public SalesForceHttpFunction(ILoggerFactory loggerFactory)
+        public SalesForceHttpFunction(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<SalesForceHttpFunction>();
-            Envs.PreFlightEnvChecks();
+            _configuration = configuration;
         }
 
         [Function("SalesForceHttpFunction")]
@@ -50,7 +52,7 @@ namespace Magello.SalesForceHttpFunction
 
             var teamTailorJob = Mappings.SalesForceToTeamTailor(sfData);
             _logger.LogInformation("After mapping: {TeamTailorJob}", teamTailorJob);
-            var apiResponse = await TeamTailorAPI.CreateJob(teamTailorJob, _logger);
+            var apiResponse = await TeamTailorAPI.CreateJob(teamTailorJob, _configuration, _logger);
             var content = await apiResponse.Content.ReadAsStringAsync();
 
             if (!apiResponse.IsSuccessStatusCode)
@@ -72,7 +74,7 @@ namespace Magello.SalesForceHttpFunction
             }
 
             // Add custom field values to the job
-            var customFieldValues = Mappings.CreateCustomFieldValues(sfData, createdJob);
+            var customFieldValues = Mappings.CreateCustomFieldValues(sfData, createdJob, _configuration);
             if (customFieldValues == null)
             {
                 _logger.LogError("Unable to create custom field values: {Content}", content);
@@ -82,7 +84,7 @@ namespace Magello.SalesForceHttpFunction
             }
 
             _logger.LogInformation("Custom value json: {CustomFieldValues}", Utils.JsonNodeToString(customFieldValues));
-            apiResponse = await TeamTailorAPI.CreateCustomFieldMappings(customFieldValues, _logger);
+            apiResponse = await TeamTailorAPI.CreateCustomFieldMappings(customFieldValues, _configuration, _logger);
             content = await apiResponse.Content.ReadAsStringAsync();
             if (!apiResponse.IsSuccessStatusCode)
             {

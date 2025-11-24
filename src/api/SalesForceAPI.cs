@@ -2,16 +2,18 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
 
-namespace  Magello
+namespace Magello
 {
-    
+
     /*
     * Salesforce asnd oauth:
     * https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/quickstart_oauth.htm
     * https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_oauth_and_connected_apps.htm
     */
-    public static class SalesForceApi {
+    public static class SalesForceApi
+    {
 
         private static string? ApiAccessToken;
         private static string ApiPath = "/services/data/v56.0/sobjects";
@@ -46,52 +48,67 @@ namespace  Magello
             "signature": "c2lnbmF0dXJl"
         } */
 
-        public static async Task RefreshAccessToken(ILogger _logger) {
+        public static async Task RefreshAccessToken(IConfiguration configuration, ILogger logger)
+        {
             if (!string.IsNullOrEmpty(ApiAccessToken))
                 return;
+
+            var salesForceApiHost = configuration.GetValue<string>(Envs.E_SalesForceApiHost) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceApiHost} not set in configuration");
+
+            var salesForceApiTokenEndpoint = configuration.GetValue<string>(Envs.E_SalesForceApiTokenEndpoint) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceApiTokenEndpoint} not set in configuration");
+
+            var salesForceApiClientKey = configuration.GetValue<string>(Envs.E_SalesForceApiClientKey) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceApiClientKey} not set in configuration");
+
+            var salesForceApiClientSecret = configuration.GetValue<string>(Envs.E_SalesForceApiClientSecret) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceApiClientSecret} not set in configuration");
+
             var tokenResponse = await PostFormData<SalesForceOAuthResponse>(
-                Utils.CreateUrl(
-                    Envs.GetEnvVar(Envs.E_SalesForceApiHost),
-                    Envs.GetEnvVar(Envs.E_SalesForceApiTokenEndpoint),
-                    query:null),
-                _logger,
-                formData: new () { 
+                Utils.CreateUrl(salesForceApiHost, salesForceApiTokenEndpoint),
+                logger,
+                formData: new() {
                     { "grant_type", "client_credentials" },
-                    { "client_id", Envs.GetEnvVar(Envs.E_SalesForceApiClientKey) },
-                    { "client_secret", Envs.GetEnvVar(Envs.E_SalesForceApiClientSecret) }
+                    { "client_id", salesForceApiClientKey },
+                    { "client_secret", salesForceApiClientSecret }
                 }
             );
-            _logger.LogInformation($"Got token issued_at {tokenResponse?.issued_at}");
+            logger.LogInformation($"Got token issued_at {tokenResponse?.issued_at}");
             if (!string.IsNullOrEmpty(tokenResponse?.access_token))
                 ApiAccessToken = tokenResponse.access_token;
         }
 
         public static async Task<HttpResponseMessage> CreateCase(
             string opportunityId,
-            string teamTailorCandidateLink
-            , ILogger _logger) 
+            string teamTailorCandidateLink,
+            IConfiguration configuration,
+            ILogger logger)
         {
-            var sfCase = new SalesforceCase() {
+            var sfCase = new SalesforceCase()
+            {
                 OpportunityId = opportunityId,
                 Description = "Denna ansökan är skapad via Magellos TeamTailor-integration",
                 TeamTailorLink = teamTailorCandidateLink
             };
-            _logger.LogInformation($"Creating new case in Salesforce: {sfCase}");
-            return await Post<SalesforceCase>($"{ApiPath}/Case", null, sfCase, _logger);
+            logger.LogInformation($"Creating new case in Salesforce: {sfCase}");
+            return await Post<SalesforceCase>($"{ApiPath}/Case", null, sfCase, configuration, logger);
         }
 
-        public static async Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, ILogger _logger) {
-            return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, _logger);
+        public static async Task<HttpResponseMessage> UpdateOpportunity(SalesForceJob job, 
+            IConfiguration configuration, ILogger logger)
+        {
+            return await Patch<SalesForceJob>($"Opportunity/{job.Id}", null, job, configuration, logger);
         }
 
         private static async Task<T?> PostFormData<T>(
-            string url, 
-            ILogger _logger, 
-            Dictionary<string, string> formData) 
+            string url,
+            ILogger logger,
+            Dictionary<string, string> formData)
         {
-            _logger.LogInformation($"Calling Post {url}");
+            logger.LogInformation($"Calling Post {url}");
             var result = new List<T>();
-            using HttpClient client = new ();
+            using HttpClient client = new();
             InitClient(client);
             var content = new FormUrlEncodedContent(formData);
             var response = await client.PostAsync(url, content);
@@ -103,14 +120,16 @@ namespace  Magello
             string endpoint,
             Dictionary<string, string>? query,
             T jsonData,
-            ILogger _logger) 
+            IConfiguration configuration,
+            ILogger logger)
         {
-            var url = Utils.CreateUrl(
-                Envs.GetEnvVar(Envs.E_SalesForceApiHost), 
-                endpoint, 
-                query);
-            _logger.LogInformation($"Calling PATCH {url}");
-            using HttpClient client = new ();
+            var salesForceApiHost = configuration.GetValue<string>(Envs.E_SalesForceApiHost) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceApiHost} not set in configuration");
+
+            var url = Utils.CreateUrl(salesForceApiHost, endpoint, query);
+
+            logger.LogInformation($"Calling PATCH {url}");
+            using HttpClient client = new();
             InitClient(client);
             var request = CreateJsonDataRequest<T>(jsonData);
             return await client.PatchAsync(url, request.Content);
@@ -120,21 +139,25 @@ namespace  Magello
             string endpoint,
             Dictionary<string, string>? query,
             T jsonData,
-            ILogger _logger) 
+            IConfiguration configuration,
+            ILogger logger)
         {
-            var url = Utils.CreateUrl(Envs.GetEnvVar(Envs.E_SalesForceApiHost), 
-                endpoint, 
-                query);
-            _logger.LogInformation($"Calling POST {url}");
-            using HttpClient client = new ();
+            var salesForceApiHost = configuration.GetValue<string>(Envs.E_SalesForceApiHost) ??
+                throw new InvalidOperationException($"{Envs.E_SalesForceApiHost} not set in configuration");
+
+            var url = Utils.CreateUrl(salesForceApiHost, endpoint, query);
+            logger.LogInformation($"Calling POST {url}");
+            using HttpClient client = new();
             InitClient(client);
             var request = CreateJsonDataRequest<T>(jsonData);
             return await client.PostAsync(url, request.Content);
         }
 
-        private static HttpRequestMessage CreateJsonDataRequest<T>(T? jsonData) {
+        private static HttpRequestMessage CreateJsonDataRequest<T>(T? jsonData)
+        {
             var request = new HttpRequestMessage();
-            if (jsonData != null) {
+            if (jsonData != null)
+            {
                 var json = JsonSerializer.Serialize<T>(jsonData, Utils.GetJsonSerializer());
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 request.Content.Headers.Remove("Content-Type");
@@ -143,7 +166,8 @@ namespace  Magello
             return request;
         }
 
-        private static void InitClient(HttpClient client) {
+        private static void InitClient(HttpClient client)
+        {
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
