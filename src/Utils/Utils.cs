@@ -16,11 +16,9 @@ namespace Magello
 
         public static string? GetNextLink(JsonNode? node)
         {
-            if (node == null)
+            if (node?["links"]?["next"]?.GetValue<string>() == null)
                 return null;
-            if (node["links"]?["next"]?.GetValue<string>() == null)
-                return null;
-            return node["links"]["next"].GetValue<string>();
+            return node["links"]!["next"]!.GetValue<string>();
         }
 
         public static string GetRandomPictureUrl()

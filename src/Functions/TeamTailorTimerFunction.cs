@@ -97,14 +97,14 @@ namespace Magello.TeamTailorTimerFunction
 
                 // Try to get saved application
                 var existingApplication = tableClient.Query<ApplicationTableEntity>(e =>
-                    e.ApplicationId == application["id"].GetValue<string>()
+                    e.ApplicationId == application["id"]!.GetValue<string>()
                 ).FirstOrDefault();
 
                 if (existingApplication != null)
                 {
                     // This application has already been processed
                     _logger.LogInformation(
-                        $"Application with id {application["id"].GetValue<string>()} already processed");
+                        $"Application with id {application["id"]!.GetValue<string>()} already processed");
                     continue;
                 }
 
@@ -120,15 +120,15 @@ namespace Magello.TeamTailorTimerFunction
                 // Add the application to table storage
                 var newTableEntity = new ApplicationTableEntity()
                 {
-                    ApplicationId = application["id"].GetValue<string>(),
-                    RowKey = application["id"].GetValue<string>()
+                    ApplicationId = application["id"]!.GetValue<string>(),
+                    RowKey = application["id"]!.GetValue<string>()
                 };
                 _logger.LogInformation($"Added new case to table storage: {newTableEntity}");
                 tableClient.AddEntity<ApplicationTableEntity>(newTableEntity);
 
                 // Create Salesforce case for application
-                var jobId = job["data"]["id"];
-                var candidateId = candidate["data"]["id"];
+                var jobId = job["data"]!["id"]!;
+                var candidateId = candidate["data"]!["id"]!;
                 var teamTailorCandidateLink = $"{Envs.GetEnvVar(Envs.E_TeamTailorBaseUrl)}/jobs/{jobId}/stages/candidate/{candidateId}";
                 await SalesForceApi.CreateCase(opportunityId, teamTailorCandidateLink, _logger);
             }

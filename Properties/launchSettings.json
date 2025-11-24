@@ -2,7 +2,7 @@
   "profiles": {
     "salesforce_to_teamtailor": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7055",
+      "commandLineArgs": "--port 7175",
       "launchBrowser": false
     }
   }

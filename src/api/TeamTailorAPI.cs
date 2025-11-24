@@ -93,7 +93,7 @@ namespace Magello {
                     continue;
                 if (!data.ContainsKey("data") || data["data"] == null)
                     continue;
-                var dataArray = data["data"].AsArray();
+                var dataArray = data["data"]!.AsArray();
                 foreach (var obj in dataArray) {
                     var unlinkedObj = obj.Deserialize<JsonNode>();
                     applicationData.Add(unlinkedObj);

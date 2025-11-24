@@ -84,11 +84,11 @@ namespace Magello
         {
             var fieldValues = new JsonObject();
 
-            if (sfJob == null || ttJob == null)
+            if (sfJob == null || ttJob?["data"]?["id"] == null)
                 return null;
 
             // Get the id of the newly created job in team tailor
-            var ttJobId = ttJob["data"]["id"].GetValue<string>();
+            var ttJobId = ttJob["data"]!["id"]!.GetValue<string>();
 
             // Add data root object
             var data = new JsonObject();
