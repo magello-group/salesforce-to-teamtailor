@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>salesforce_to_teamtailor</RootNamespace>
+    <RootNamespace>Magello.SalesforceToTeamtailor</RootNamespace>
     <UserSecretsId>6534ea15-b0c5-4cdf-a61d-d3a4a0844298</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
