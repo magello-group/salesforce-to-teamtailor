@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Azure.Identity;
 using Scriban;
 using Scriban.Runtime;
 
@@ -8,10 +9,35 @@ namespace Magello.SalesforceToTeamtailor.Utils;
 
 public static class Utils
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+    };
+
+    public static DefaultAzureCredential AzureCredentials { get; } = new(new DefaultAzureCredentialOptions
+    {
+        // Exclude these for all build configurations
+        ExcludeEnvironmentCredential = true,
+        ExcludeWorkloadIdentityCredential = true,
+        ExcludeBrokerCredential = true,
+
+#if DEBUG
+        // Development exclusion overrides
+        ExcludeManagedIdentityCredential = true
+#else
+    // Production exclusion overrides
+    ExcludeAzureCliCredential = true,
+    ExcludeAzureDeveloperCliCredential = true,
+    ExcludeAzurePowerShellCredential = true,
+    ExcludeVisualStudioCredential = true,
+    ExcludeVisualStudioCodeCredential = true
+#endif
+    });
+
     public static string JsonNodeToString(JsonNode node)
     {
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        return node.ToJsonString(options);
+        return node.ToJsonString(_jsonOptions);
     }
 
     public static string? GetNextLink(JsonNode? node)
@@ -76,11 +102,7 @@ public static class Utils
 
     public static JsonSerializerOptions GetJsonSerializer()
     {
-        return new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
-        };
+        return _jsonOptions;
     }
 
     public static string CreateUrl(

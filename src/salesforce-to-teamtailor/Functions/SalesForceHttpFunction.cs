@@ -13,12 +13,14 @@ namespace Magello.SalesforceToTeamtailor.Functions;
 public class SalesForceHttpFunction
 {
     private readonly ILogger _logger;
+    private readonly ITeamTailorApi _teamTailorAPI;
     private readonly IConfiguration _configuration;
 
-    public SalesForceHttpFunction(IConfiguration configuration, ILoggerFactory loggerFactory)
+    public SalesForceHttpFunction(ITeamTailorApi teamTailorAPI, IConfiguration configuration, ILogger<SalesForceHttpFunction> logger)
     {
-        _logger = loggerFactory.CreateLogger<SalesForceHttpFunction>();
+        _teamTailorAPI = teamTailorAPI;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [Function("SalesForceHttpFunction")]
@@ -29,10 +31,7 @@ public class SalesForceHttpFunction
         SalesForceJob? sfData;
         try
         {
-            sfData = await JsonSerializer.DeserializeAsync<SalesForceJob>(
-                req.Body,
-                Utils.Utils.GetJsonSerializer()
-            );
+            sfData = await JsonSerializer.DeserializeAsync<SalesForceJob>(req.Body, Utils.Utils.GetJsonSerializer());
         }
         catch (Exception e)
         {
@@ -54,7 +53,7 @@ public class SalesForceHttpFunction
 
         var teamTailorJob = Mappings.SalesForceToTeamTailor(sfData);
         _logger.LogInformation("After mapping: {TeamTailorJob}", teamTailorJob);
-        var apiResponse = await TeamTailorAPI.CreateJob(teamTailorJob, _configuration, _logger);
+        var apiResponse = await _teamTailorAPI.CreateJob(teamTailorJob);
         var content = await apiResponse.Content.ReadAsStringAsync();
 
         if (!apiResponse.IsSuccessStatusCode)
@@ -86,7 +85,7 @@ public class SalesForceHttpFunction
         }
 
         _logger.LogInformation("Custom value json: {CustomFieldValues}", Utils.Utils.JsonNodeToString(customFieldValues));
-        apiResponse = await TeamTailorAPI.CreateCustomFieldMappings(customFieldValues, _configuration, _logger);
+        apiResponse = await _teamTailorAPI.CreateCustomFieldMappings(customFieldValues);
         content = await apiResponse.Content.ReadAsStringAsync();
         if (!apiResponse.IsSuccessStatusCode)
         {

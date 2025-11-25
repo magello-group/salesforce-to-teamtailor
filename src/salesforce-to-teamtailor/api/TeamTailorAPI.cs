@@ -1,49 +1,37 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Magello.SalesforceToTeamtailor.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Magello.SalesforceToTeamtailor.Api;
 
-
-public static class TeamTailorAPI
+internal sealed class TeamTailorAPI(HttpClient client, IConfiguration configuration, ILogger<TeamTailorAPI> logger) : ITeamTailorApi
 {
 
     private static readonly string ApiHost = "api.teamtailor.com";
     private static readonly string ApiVersion = "v1";
 
-    public static async Task<HttpResponseMessage> CreateCustomFieldMappings(JsonNode values, IConfiguration configuration, ILogger _logger)
+    private readonly HttpClient _client = client;
+    private readonly IConfiguration _configuration = configuration;
+    private readonly ILogger _logger = logger;
+
+    public async Task<HttpResponseMessage> CreateCustomFieldMappings(JsonNode values)
     {
-        return await Post<JsonNode>(
-            $"{ApiVersion}/custom-field-values",
-            null,
-            values,
-            configuration,
-            _logger
-        );
+        return await Post($"{ApiVersion}/custom-field-values", values);
     }
 
     // Returns a dictionary<string, string> with custom-field id to custom-field-value value
     // mappings for a given job
-    public static async Task<Dictionary<string, string>?> GetCustomFieldValues(
-        JsonNode job,
-        IConfiguration configuration,
-        ILogger _logger)
+    public async Task<Dictionary<string, string>?> GetCustomFieldValues(JsonNode job)
     {
-        var link =
-            job["data"]?["relationships"]?["custom-field-values"]?["links"]?["related"]?
-            .GetValue<string>();
+        var link = job["data"]?["relationships"]?["custom-field-values"]?["links"]?["related"]?.GetValue<string>();
+
         if (link == null)
         {
             return null;
         }
-        var values = await Get(
-            link,
-            configuration,
-            _logger
-        );
+        var values = await Get(link);
 
         if (values == null || values.Count == 0)
         {
@@ -67,7 +55,7 @@ public static class TeamTailorAPI
                     continue;
                 }
 
-                var field = await Get(fieldLink, configuration, _logger);
+                var field = await Get(fieldLink);
                 if (field == null || field.Count == 0)
                 {
                     continue;
@@ -85,23 +73,18 @@ public static class TeamTailorAPI
         return fieldValues;
     }
 
-    public static async Task<JsonNode?> GetCustomFields(IConfiguration configuration, ILogger _logger)
+    public async Task<JsonNode?> GetCustomFields()
     {
         var fields = await Get(
             Utils.Utils.CreateUrl(
                 ApiHost,
                 $"{ApiVersion}/custom-fields",
                 null
-            ),
-            configuration,
-            _logger);
+            ));
         return fields?[0];
     }
 
-    public static async Task<JsonArray> GetApplications(
-        DateTime since,
-        IConfiguration configuration,
-        ILogger _logger)
+    public async Task<JsonArray> GetApplications(DateTime since)
     {
         var applications = await Get(
             Utils.Utils.CreateUrl(
@@ -109,9 +92,7 @@ public static class TeamTailorAPI
                 $"{ApiVersion}/job-applications",
                 new Dictionary<string, string>() {
                     { "filter[created-at][from]", since.ToString("yyyy-MM-dd") }
-                }),
-            configuration,
-            _logger);
+                }));
         JsonArray applicationData = [];
         if (applications == null)
         {
@@ -140,11 +121,7 @@ public static class TeamTailorAPI
         return applicationData;
     }
 
-    public static async Task<JsonNode?> GetCandidateFromApplication(
-        JsonNode application,
-        IConfiguration configuration,
-        ILogger _logger
-    )
+    public async Task<JsonNode?> GetCandidateFromApplication(JsonNode application)
     {
         var link = application["relationships"]?["candidate"]?["links"]?["related"]?.GetValue<string>();
         if (link == null)
@@ -152,7 +129,7 @@ public static class TeamTailorAPI
             return null;
         }
 
-        var candidates = await Get(link, configuration, _logger);
+        var candidates = await Get(link);
         if (candidates == null || candidates.Count == 0)
         {
             return null;
@@ -161,7 +138,7 @@ public static class TeamTailorAPI
         return candidates.First();
     }
 
-    public static async Task<JsonNode?> GetJobFromApplication(JsonNode application, IConfiguration configuration, ILogger _logger)
+    public async Task<JsonNode?> GetJobFromApplication(JsonNode application)
     {
         var link = application["relationships"]?["job"]?["links"]?["related"]?.GetValue<string>();
         if (link == null)
@@ -169,7 +146,7 @@ public static class TeamTailorAPI
             return null;
         }
 
-        var jobs = await Get(link, configuration, _logger);
+        var jobs = await Get(link);
         if (jobs == null || jobs.Count == 0)
         {
             return null;
@@ -178,19 +155,18 @@ public static class TeamTailorAPI
         return jobs.First();
     }
 
-    public static async Task<HttpResponseMessage> CreateJob(JsonNode job, IConfiguration configuration, ILogger _logger)
+    public async Task<HttpResponseMessage> CreateJob(JsonNode job)
     {
-        return await Post($"{ApiVersion}/jobs", null, job, configuration, _logger);
+        return await Post($"{ApiVersion}/jobs", job);
     }
 
     // Handles pagination
-    private static async Task<List<JsonNode>?> Get(string url, IConfiguration configuration, ILogger _logger)
+    private async Task<List<JsonNode>?> Get(string url)
     {
         _logger.LogInformation("Calling GET {url}", url);
         var result = new List<JsonNode>();
-        using HttpClient client = new();
-        InitClient(client, configuration);
-        var stringResponse = await client.GetStringAsync(url);
+
+        var stringResponse = await _client.GetStringAsync(url);
         var response = JsonSerializer.Deserialize<JsonNode>(stringResponse, Utils.Utils.GetJsonSerializer());
         if (response != null)
         {
@@ -201,7 +177,7 @@ public static class TeamTailorAPI
         {
             do
             {
-                stringResponse = await client.GetStringAsync(Utils.Utils.GetNextLink(response));
+                stringResponse = await _client.GetStringAsync(Utils.Utils.GetNextLink(response));
                 //_logger.LogInformation($"Page response: {stringResponse}");
                 response = JsonSerializer.Deserialize<JsonNode>(stringResponse, Utils.Utils.GetJsonSerializer());
                 if (response != null)
@@ -213,45 +189,14 @@ public static class TeamTailorAPI
         return result;
     }
 
-    private static async Task<HttpResponseMessage> Post<T>(
-        string endpoint,
-        Dictionary<string, string>? query,
-        T jsonData,
-        IConfiguration configuration,
-        ILogger _logger)
+    private async Task<HttpResponseMessage> Post<T>(string endpoint, T jsonData)
     {
-        var url = Utils.Utils.CreateUrl(ApiHost, endpoint, query);
-        _logger.LogInformation($"Calling POST {url}");
-        using HttpClient client = new();
-        InitClient(client, configuration);
-        var request = CreateJsonDataRequest<T>(jsonData);
-        return await client.PostAsync(url, request.Content);
+        _logger.LogInformation("Calling POST {Endpoint}", endpoint);
+
+        var json = JsonSerializer.Serialize(jsonData, Utils.Utils.GetJsonSerializer());
+
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        return await _client.PostAsync(endpoint, content);
     }
-
-    private static void InitClient(HttpClient client, IConfiguration configuration)
-    {
-        var teamTailorApiToken = configuration.GetValue<string>(Envs.E_TeamTailorApiToken) ??
-            throw new InvalidOperationException($"{Envs.E_TeamTailorApiToken} not set in configuration");
-
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Add("Accept", "application/vnd.api+json");
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-            "Token", $"token={teamTailorApiToken}"
-        );
-        client.DefaultRequestHeaders.Add("X-Api-Version", "20210218");
-    }
-
-    private static HttpRequestMessage CreateJsonDataRequest<T>(T? jsonData)
-    {
-        var request = new HttpRequestMessage();
-        if (jsonData != null)
-        {
-            var json = JsonSerializer.Serialize<T>(jsonData, Utils.Utils.GetJsonSerializer());
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-            request.Content.Headers.Remove("Content-Type");
-            request.Content.Headers.Add("Content-Type", "application/vnd.api+json");
-        }
-        return request;
-    }
-
 }

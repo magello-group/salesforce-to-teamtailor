@@ -13,25 +13,28 @@ public class TeamTailorTimerFunction
 {
     private const string StorageTableName = "Applications";
 
-    private readonly ILogger _logger;
     private readonly IConfiguration _configuration;
+    private readonly ILogger _logger;
+    private readonly ISalesForceApi _salesForceApi;
+    private readonly ITeamTailorApi _teamTailorAPI;
 
-    public TeamTailorTimerFunction(ILoggerFactory loggerFactory, IConfiguration configuration)
+    public TeamTailorTimerFunction(ISalesForceApi salesForceApi, ITeamTailorApi teamTailorAPI, 
+                                   ILogger<TeamTailorTimerFunction> logger, IConfiguration configuration)
     {
-        _logger = loggerFactory.CreateLogger<TeamTailorTimerFunction>();
+        _salesForceApi = salesForceApi;
+        _teamTailorAPI = teamTailorAPI;
+        _logger = logger;
         _configuration = configuration;
     }
 
     [Function("TeamTailorTimerFunction")]
-    public async Task Run([TimerTrigger("0 */5 8-20 * * Mon-Fri", RunOnStartup = false)] MyInfo myTimer)
+    public async Task Run([TimerTrigger("0 */5 8-20 * * Mon-Fri", RunOnStartup = true)] MyInfo myTimer)
     {
-        // Run every 5 minutes between 8-20 monday to friday
+        var salesForceCustomFieldId = _configuration.GetValue<string>(Envs.E_SalesForceCustomFieldId) ??
+            throw new InvalidOperationException($"{Envs.E_SalesForceCustomFieldId} not set in configuration");
+
         _logger.LogInformation($"TeamTailorTimerFunction executed at: {DateTime.Now}");
         _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus?.Next}");
-
-        // TODO Remove 
-        // Don't run right now
-        //return;
 
         // Get the datetime of our last run
         var lastRun = DateTime.Now;
@@ -43,10 +46,8 @@ public class TeamTailorTimerFunction
         _logger.LogInformation($"Last run was at {lastRun}");
 
         // Get applications created since date of last run
-        var applications = await TeamTailorAPI.GetApplications(lastRun, _configuration, _logger);
-        // TODO Remove
-        //var testingDate = new DateTime(2023, 1, 4);
-        //var applications = await TeamTailorAPI.GetApplications(testingDate, _logger);
+        var applications = await _teamTailorAPI.GetApplications(lastRun);
+
         _logger.LogInformation($"Found {applications.Count} applications since last run");
 
         // No applications - we're done
@@ -56,7 +57,7 @@ public class TeamTailorTimerFunction
         }
 
         // Get team tailor custom fields
-        var customFields = await TeamTailorAPI.GetCustomFields(_configuration, _logger);
+        var customFields = await _teamTailorAPI.GetCustomFields();
         if (customFields == null)
         {
             _logger.LogError("Custom fields was null");
@@ -65,9 +66,6 @@ public class TeamTailorTimerFunction
 
         // Get an Azure Table Storage client
         var tableClient = await GetTableClient(_logger);
-
-        // Get a fresh access token for the Salesforce API
-        await SalesForceApi.RefreshAccessToken(_configuration, _logger);
 
         // Loop all found applications
         foreach (var application in applications)
@@ -80,7 +78,7 @@ public class TeamTailorTimerFunction
             }
 
             // Get linked job for application
-            var job = await TeamTailorAPI.GetJobFromApplication(application, _configuration, _logger);
+            var job = await _teamTailorAPI.GetJobFromApplication(application);
             if (job == null)
             {
                 _logger.LogInformation("Job was null");
@@ -88,15 +86,12 @@ public class TeamTailorTimerFunction
             }
 
             // Get custom field values
-            var fieldValues = await TeamTailorAPI.GetCustomFieldValues(job, _configuration, _logger);
+            var fieldValues = await _teamTailorAPI.GetCustomFieldValues(job);
             if (fieldValues == null || fieldValues.Count == 0)
             {
                 _logger.LogInformation("Job has no custom field values");
                 continue;
             }
-
-            var salesForceCustomFieldId = _configuration.GetValue<string>(Envs.E_SalesForceCustomFieldId) ??
-                throw new InvalidOperationException("SalesForceCustomFieldId not set in configuration");
 
             if (!fieldValues.TryGetValue(salesForceCustomFieldId, out var opportunityId))
             {
@@ -112,15 +107,14 @@ public class TeamTailorTimerFunction
             if (existingApplication != null)
             {
                 // This application has already been processed
-                _logger.LogInformation(
-                    $"Application with id {application["id"]!.GetValue<string>()} already processed");
+                _logger.LogInformation("Application with id {ApplicationId} already processed",
+                                       application["id"]!.GetValue<string>());
+
                 continue;
             }
 
-            var candidate = await TeamTailorAPI.GetCandidateFromApplication(
-                application,
-                _configuration,
-                _logger);
+            var candidate = await _teamTailorAPI.GetCandidateFromApplication(application);
+
             if (candidate == null)
             {
                 _logger.LogInformation("Could not get candidate from application");
@@ -133,42 +127,32 @@ public class TeamTailorTimerFunction
                 ApplicationId = application["id"]!.GetValue<string>(),
                 RowKey = application["id"]!.GetValue<string>()
             };
-            _logger.LogInformation($"Added new case to table storage: {newTableEntity}");
-            tableClient.AddEntity<ApplicationTableEntity>(newTableEntity);
+            _logger.LogInformation("Added new case to table storage: {NewTableEntity}", newTableEntity);
+            tableClient.AddEntity(newTableEntity);
 
             // Create Salesforce case for application
             var jobId = job["data"]!["id"]!;
             var candidateId = candidate["data"]!["id"]!;
             var teamTailorUrl = _configuration.GetValue<string>(Envs.E_TeamTailorBaseUrl) ??
-                throw new InvalidOperationException("TeamTailorBaseUrl not set in configuration");
+                throw new InvalidOperationException($"{Envs.E_TeamTailorBaseUrl} not set in configuration");
 
             var teamTailorCandidateLink = $"{teamTailorUrl}/jobs/{jobId}/stages/candidate/{candidateId}";
-            await SalesForceApi.CreateCase(opportunityId, teamTailorCandidateLink, _configuration, _logger);
+            await _salesForceApi.CreateCase(opportunityId, teamTailorCandidateLink);
         }
-
     }
 
     private async Task<TableClient> GetTableClient(ILogger _logger)
     {
-        var storageAccountName = _configuration.GetValue<string>(Envs.E_AzStorageAccountName) ??
-            throw new InvalidOperationException("AzStorageAccountName not set in configuration");
-
-        var storageAccountKey = _configuration.GetValue<string>(Envs.E_AzStorageAccountKey) ??
-            throw new InvalidOperationException("AzStorageAccountKey not set in configuration");
-
         var storageAccountUri = _configuration.GetValue<string>(Envs.E_AzStorageAccountUri) ??
-                throw new InvalidOperationException("AzStorageAccountUri not set in configuration");
+                throw new InvalidOperationException($"{Envs.E_AzStorageAccountUri} not set in configuration");
 
-        _logger.LogInformation($"Getting TableClient for {storageAccountName}");
+        _logger.LogDebug("Getting Storage Table client.");
 
-        var tableClient = new TableClient(
-            new Uri(storageAccountUri),
-            StorageTableName,
-            new TableSharedKeyCredential(storageAccountName, storageAccountKey));
+        var tableClient = new TableClient(new Uri(storageAccountUri), StorageTableName, Utils.Utils.AzureCredentials);
 
         await tableClient.CreateIfNotExistsAsync();
 
-        _logger.LogInformation("TableClient OK");
+        _logger.LogDebug("TableClient OK");
 
         return tableClient;
     }
