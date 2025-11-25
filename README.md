@@ -2,14 +2,29 @@
 
 Azure function middleware to handle API-to-API communication between SalesForce and TeamTailor
 
-# To redesign the Teamtailor job body
+## **IMPORTANT!**
+
+> This branch is WIP, the code is currently in progress of beeing migrated in conjunction with move
+> to new Azure environment. However; teamtailor si about to be obsolete, so this work is halted until
+> further notice.
+
+What's left to do here to make this code more .NET like:
+- Change all json serialization/deserialization to use more best practices for serializing/deserializing to
+  strong typed classes.
+- Improve error handling for HTTP requests (they are ignored now for most part).
+- Fix issue TT -> SF since SF has changed their requirement for OAuth and scopes (must be set in SF).
+- Fix configuration to use ASP.NET Core Configuration best practices instead of environment variables.
+- Add Container App Functions for the project in the infrastructure.
+
+
+## To redesign the Teamtailor job body
 
 1) Open `src/templates/teamtailor-body.scriban-html`
 2) Use fields mapped in `utils/Utils.cs` function `TemplateTeamTailorBody(..)`
 3) The template is templated using `scriban` and Teamtailor jobs accept `HTML` as body
 4) Redeploy the function (function is `magellosalesforceteamtailor` on Azure for publish profile download)
 
-# Execution flow
+## Execution flow
 
 Salesforce UI button -> 
     starts flow -> 
@@ -68,19 +83,19 @@ azure function (teamtailor -> salesforce)
     * TeamTailor-button
     * Fields (see above)
 
-# TeamTailor modifications
+## TeamTailor modifications
 
 * Custom fields:
     * salesforceid (API only)
 
-# Required configuration
+## Required configuration
 
 * Teamtailor: Create custom field and fetch the id (see how under env var documentation below)
 * Salesforce: Add salesforce user -> teamtailor userid mapping to metadata
 * Salesforce: Add API-only user + profile with rights to create cases
 * Salesforce: Add connected app with client credential flow and set "run as" to above API-user
 
-# Environment variables
+## Environment variables
 
 | Name | Description |
 | --- | --- |
@@ -95,7 +110,7 @@ azure function (teamtailor -> salesforce)
 | SFID_CUSTOM_FIELD_ID | ID of the custom field used for the salesforceid. This can be obtained through an API call to: https://api.teamtailor.com/v1/custom-fields | 
 | TEAMTAILOR_BASE_URL | Base url to the company on teamtailor, e.g. https://app.teamtailor.com/companies/ABCD-ABCab12 |
 
-# Deploy functions to Azure through Rider with Azure toolkit
+## Deploy functions to Azure through Rider with Azure toolkit
 
 ### Prerequisites
 
@@ -112,7 +127,7 @@ Functions from running completely, a work-around for this is to go to the Functi
 and setting the variable `FUNCTIONS_WORKER_RUNTIME` to `dotnet-isolated` manually. Don't forget to save! This should restart the functions automatically,
 but sometimes I had to manually start the functions again, this can be done on the `Overview`-page.
 
-# TODO
+## TODO
 
 * Import changeset to production
 * User user "Insights Integration" - modify profile
