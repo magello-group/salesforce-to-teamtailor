@@ -72,7 +72,10 @@ module storage 'br:crmagello.azurecr.io/bicep/storage:latest' = {
     workload: 'sf-to-tt' // Shortened name due to Key Vault name restrictions
     redundancy: environment == 'prod' ? 'ZRS' : 'LRS'
     privateEndpointSubnetId: privateEndpointSubnet.id
+    allowContainerAppEnvironmentAccess: true
     storageServices: [
+      'blob'
+      'queue'
       'table'
     ]
     keyVaultName: kv.outputs.keyVaultName
@@ -80,6 +83,6 @@ module storage 'br:crmagello.azurecr.io/bicep/storage:latest' = {
       {
         name: 'Applications'
       }
-    ]    
+    ]
   }
 }
